@@ -1,0 +1,10 @@
+.build/
+out/
+*.ipa
+*.p12
+*.p8
+*.mobileprovision
+*.xcuserstate
+xcuserdata/
+__pycache__/
+.env*
