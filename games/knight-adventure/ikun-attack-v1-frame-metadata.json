@@ -1,0 +1,284 @@
+{
+  "source": "dist/assets/ikun-attack-frames-v1.png",
+  "reference": "dist/assets/ikun-knight.png",
+  "width": 1774,
+  "height": 887,
+  "format": "RGBA transparent PNG",
+  "alphaThreshold": 16,
+  "transparentPixels": 1077273,
+  "note": "All eight frames are fully drawn whole characters. No procedural limb assembly. Nonuniform source rectangles preserve complete swords and capes without neighboring sprites. Foot baselines are measured from alpha >16. Chest anchors and hair tops are manual visual estimates. One uniform .46 scale is used for every frame and both image axes. Never crop with a simple uniform 4x2 grid.",
+  "frames": [
+    {
+      "index": 0,
+      "pose": "ready, sword up-left as in the reference",
+      "rect": [
+        0,
+        0,
+        443,
+        475
+      ],
+      "alphaBoundsGlobal": [
+        82,
+        81,
+        418,
+        426
+      ],
+      "headTopY": 134,
+      "footY": 426,
+      "chestX": 309,
+      "scale": 0.46,
+      "anchorLocal": [
+        309,
+        426
+      ],
+      "renderTuple": [
+        0,
+        0,
+        443,
+        475,
+        309,
+        426,
+        0.46
+      ],
+      "headToFootHeight": 292
+    },
+    {
+      "index": 1,
+      "pose": "crouched windup, bent short arms",
+      "rect": [
+        443,
+        0,
+        444,
+        475
+      ],
+      "alphaBoundsGlobal": [
+        516,
+        144,
+        860,
+        427
+      ],
+      "headTopY": 150,
+      "footY": 427,
+      "chestX": 709,
+      "scale": 0.46,
+      "anchorLocal": [
+        266,
+        427
+      ],
+      "renderTuple": [
+        443,
+        0,
+        444,
+        475,
+        266,
+        427,
+        0.46
+      ],
+      "headToFootHeight": 277
+    },
+    {
+      "index": 2,
+      "pose": "both hands raised above shoulder",
+      "rect": [
+        887,
+        0,
+        443,
+        475
+      ],
+      "alphaBoundsGlobal": [
+        939,
+        55,
+        1225,
+        427
+      ],
+      "headTopY": 147,
+      "footY": 427,
+      "chestX": 1091,
+      "scale": 0.46,
+      "anchorLocal": [
+        204,
+        427
+      ],
+      "renderTuple": [
+        887,
+        0,
+        443,
+        475,
+        204,
+        427,
+        0.46
+      ],
+      "headToFootHeight": 280
+    },
+    {
+      "index": 3,
+      "pose": "start forward swing",
+      "rect": [
+        1330,
+        0,
+        444,
+        475
+      ],
+      "alphaBoundsGlobal": [
+        1341,
+        152,
+        1718,
+        429
+      ],
+      "headTopY": 152,
+      "footY": 429,
+      "chestX": 1512,
+      "scale": 0.46,
+      "anchorLocal": [
+        182,
+        429
+      ],
+      "renderTuple": [
+        1330,
+        0,
+        444,
+        475,
+        182,
+        429,
+        0.46
+      ],
+      "headToFootHeight": 277
+    },
+    {
+      "index": 4,
+      "pose": "contact slash down-right",
+      "rect": [
+        0,
+        475,
+        490,
+        412
+      ],
+      "alphaBoundsGlobal": [
+        59,
+        536,
+        468,
+        810
+      ],
+      "headTopY": 536,
+      "footY": 810,
+      "chestX": 260,
+      "scale": 0.46,
+      "anchorLocal": [
+        260,
+        335
+      ],
+      "renderTuple": [
+        0,
+        475,
+        490,
+        412,
+        260,
+        335,
+        0.46
+      ],
+      "headToFootHeight": 274
+    },
+    {
+      "index": 5,
+      "pose": "follow-through down-right",
+      "rect": [
+        490,
+        475,
+        435,
+        412
+      ],
+      "alphaBoundsGlobal": [
+        513,
+        536,
+        913,
+        813
+      ],
+      "headTopY": 536,
+      "footY": 813,
+      "chestX": 700,
+      "scale": 0.46,
+      "anchorLocal": [
+        210,
+        338
+      ],
+      "renderTuple": [
+        490,
+        475,
+        435,
+        412,
+        210,
+        338,
+        0.46
+      ],
+      "headToFootHeight": 277
+    },
+    {
+      "index": 6,
+      "pose": "recover hands toward chest",
+      "rect": [
+        925,
+        475,
+        405,
+        412
+      ],
+      "alphaBoundsGlobal": [
+        940,
+        509,
+        1278,
+        814
+      ],
+      "headTopY": 538,
+      "footY": 814,
+      "chestX": 1114,
+      "scale": 0.46,
+      "anchorLocal": [
+        189,
+        339
+      ],
+      "renderTuple": [
+        925,
+        475,
+        405,
+        412,
+        189,
+        339,
+        0.46
+      ],
+      "headToFootHeight": 276
+    },
+    {
+      "index": 7,
+      "pose": "settled ready stance",
+      "rect": [
+        1330,
+        475,
+        444,
+        412
+      ],
+      "alphaBoundsGlobal": [
+        1369,
+        499,
+        1704,
+        817
+      ],
+      "headTopY": 533,
+      "footY": 817,
+      "chestX": 1595,
+      "scale": 0.46,
+      "anchorLocal": [
+        265,
+        342
+      ],
+      "renderTuple": [
+        1330,
+        475,
+        444,
+        412,
+        265,
+        342,
+        0.46
+      ],
+      "headToFootHeight": 284
+    }
+  ]
+}

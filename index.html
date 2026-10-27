@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="选择王果冻的消消小窝，或与王果冻和 ikun 骑士一起踏上十二章冒险。">
+  <meta name="color-scheme" content="light">
+  <title>游戏小窝 · 选择你的冒险</title>
+  <style>
+    :root{--ink:#29362d;--muted:#647167;--paper:#f6f4ed;--line:#dce1d5;--gold:#c99a48}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 10% 0%,#e8eddf,transparent 48%),var(--paper);color:var(--ink);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;line-height:1.65}
+    a{color:inherit}
+    .wrap{width:min(1100px,calc(100% - 48px));margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;padding:28px 0;border-bottom:1px solid var(--line);gap:20px}
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-size:18px;font-weight:750;letter-spacing:1px}
+    .brand-mark{display:grid;place-items:center;width:37px;height:37px;border:1px solid #bdc9b4;border-radius:12px;background:#edf1e7;font-size:19px;color:#5d7754}
+    .repo{font-size:12px;color:var(--muted);text-underline-offset:4px}
+    main{padding:58px 0 54px}
+    .eyebrow{margin:0 0 13px;font-size:11px;letter-spacing:4px;color:#7a865f}
+    h1{margin:0;font-size:clamp(30px,4.7vw,48px);line-height:1.35;letter-spacing:-1px;font-weight:800}
+    .intro{margin:18px 0 34px;max-width:660px;color:var(--muted);font-size:14px}
+    .games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+    .card{display:flex;flex-direction:column;overflow:hidden;border:1px solid #d8dece;border-radius:22px;background:#fffdf8;box-shadow:0 14px 35px #39473108}
+    .art{position:relative;display:grid;place-items:center;height:258px;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#e3d9c0,transparent 60%),#e9eedf}
+    .art:after{content:"";position:absolute;width:210px;height:18px;border-radius:50%;bottom:23px;background:#64734a18;filter:blur(8px)}
+    .art img{display:block;position:relative;z-index:1;width:255px;height:237px;object-fit:contain}
+    .knight .art{background:radial-gradient(ellipse at 60% 40%,#68738945,transparent 64%),#263449}
+    .knight .art:after{background:#0005}
+    .knight .art img{width:260px;height:246px}
+    .tag{position:absolute;z-index:2;top:18px;left:20px;padding:4px 10px;border:1px solid #fff9;border-radius:20px;background:#fff9;color:#53634b;font-size:10px;letter-spacing:1px}
+    .knight .tag{border-color:#c9d5e52b;background:#18253899;color:#d8c79c}
+    .body{display:flex;flex:1;flex-direction:column;padding:25px 27px 27px}
+    .number{margin:0 0 5px;color:#9b936c;font-size:10px;letter-spacing:3px}
+    h2{margin:0 0 10px;font-size:23px;line-height:1.45;letter-spacing:-.4px}
+    .desc{margin:0;color:var(--muted);font-size:13px;min-height:64px}
+    .features{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 24px}
+    .features span{padding:3px 8px;border:1px solid #e0e4d8;border-radius:5px;color:#718064;font-size:10px}
+    .actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:auto}
+    .play{display:inline-flex;align-items:center;justify-content:center;gap:22px;min-height:43px;padding:9px 17px;border:1px solid #5f7655;border-radius:8px;background:#5f7655;color:white;text-decoration:none;font-size:12px;font-weight:700;transition:background .15s,transform .15s}
+    .knight .play{border-color:#33465e;background:#33465e}
+    .play:hover{background:#4e6544;transform:translateY(-1px)}
+    .knight .play:hover{background:#26394f}
+    .instructions{color:#768169;font-size:11px;text-decoration:none;text-underline-offset:4px}
+    .instructions:hover{text-decoration:underline}
+    a:focus-visible{outline:3px solid #c99a48;outline-offset:5px;border-radius:5px}
+    .note{display:flex;gap:12px;margin:27px 0 0;padding:17px 20px;border:1px solid var(--line);border-radius:10px;color:#77816f;background:#ffffff54;font-size:11px}
+    .note strong{flex-shrink:0;color:#56654b;font-weight:600}
+    footer{display:flex;justify-content:space-between;gap:16px;padding:21px 0 30px;border-top:1px solid var(--line);color:#8b9385;font-size:10px}
+    @media(max-width:700px){.wrap{width:min(520px,calc(100% - 32px))}header{padding:20px 0}.brand{font-size:16px}.repo{font-size:10px}main{padding:36px 0}.intro{font-size:13px;margin-bottom:26px}.games{grid-template-columns:1fr;gap:22px}.art{height:225px}.art img{height:210px}.knight .art img{height:215px}.body{padding:21px 23px 23px}.desc{min-height:0}.features{margin:15px 0 20px}.note{display:block;line-height:1.8}.note strong{display:block;margin-bottom:3px}footer{flex-wrap:wrap}}
+    @media(prefers-reduced-motion:reduce){.play{transition:none}.play:hover{transform:none}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">✦</span> 游戏小窝</a>
+      <a class="repo" href="https://github.com/user-cyx-66/wangguodong-match-pet">查看游戏仓库 ↗</a>
+    </header>
+    <main>
+      <p class="eyebrow">今天，想玩哪一个？</p>
+      <h1>陪小猫歇一会儿，<br>或握紧长剑去冒险。</h1>
+      <p class="intro">两个独立的小世界，一只熟悉的王果冻。选一个开始，故事和进度都会在各自的游戏里继续。</p>
+      <div class="games">
+        <article class="card match">
+          <div class="art"><span class="tag">消除 · 猫咪陪伴</span><img src="games/match-pet/dist/assets/cat-idle.png" alt="王果冻小猫" width="255" height="237"></div>
+          <div class="body">
+            <p class="number">GAME 01</p>
+            <h2>王果冻的消消小窝</h2>
+            <p class="desc">点心连成一片，小鱼干装进口袋。玩三消或点点连消，摸摸小猫，把小窝慢慢布置成喜欢的样子。</p>
+            <div class="features"><span>三消 / 点点连消</span><span>小猫养成</span><span>Windows 桌宠</span></div>
+            <div class="actions"><a class="play" href="games/match-pet/dist/index.html">进入小窝 <span aria-hidden="true">→</span></a><a class="instructions" href="games/match-pet/README.md">玩法与版本说明</a></div>
+          </div>
+        </article>
+        <article class="card knight">
+          <div class="art"><span class="tag">冒险 · 并肩作战</span><img src="games/knight-adventure/dist/assets/ikun-knight.png" alt="银发铠甲小鸡 ikun 骑士举着长剑" width="260" height="246"></div>
+          <div class="body">
+            <p class="number">GAME 02</p>
+            <h2>王果冻骑士：荒原誓约</h2>
+            <p class="desc">与王德敏公主踏过十二章旅途，寻宝、升级装备、迎战恶龙，最后接蔡乙先王子回家。</p>
+            <div class="features"><span>十二章闯关</span><span>王果冻 / ikun 骑士</span><span>装备成长</span></div>
+            <div class="actions"><a class="play" href="games/knight-adventure/dist/index.html">启程冒险 <span aria-hidden="true">→</span></a><a class="instructions" href="games/knight-adventure/README.md">玩法与操作说明</a></div>
+          </div>
+        </article>
+      </div>
+      <p class="note"><strong>从哪里继续？</strong><span>两个游戏分别记录浏览器进度。消消小窝的 Windows 桌宠与 iPhone 版本说明在它自己的目录中；骑士冒险从网页直接开始。</span></p>
+    </main>
+    <footer><span>游戏小窝 · 两段旅程，随时回来</span><span>保留完整文件夹，可离线打开游玩</span></footer>
+  </div>
+</body>
+</html>

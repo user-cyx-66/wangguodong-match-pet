@@ -1,1 +1,10 @@
-{"name":"wangguodong-match-pet","version":"2.0.0","private":true,"scripts":{"test":"node --test tests/*.test.cjs","check":"node --check dist/engine.js && node --check dist/app.js && node --check dist/audio.js && node --check dist/effects.js","preview":"python -m http.server 4188 --directory dist"}}
+{
+  "name": "games",
+  "version": "1.0.0",
+  "private": true,
+  "description": "王果冻的消消小窝与王果冻 / ikun 骑士冒险游戏合集",
+  "scripts": {
+    "check": "npm --prefix games/match-pet run check && npm --prefix games/knight-adventure run check",
+    "test": "npm --prefix games/match-pet test && npm --prefix games/knight-adventure test"
+  }
+}

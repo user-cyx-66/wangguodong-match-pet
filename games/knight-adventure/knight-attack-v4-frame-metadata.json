@@ -1,0 +1,121 @@
+{
+  "source": "dist/assets/knight-attack-frames-v4.png",
+  "width": 1774,
+  "height": 887,
+  "format": "RGBA transparent PNG",
+  "note": "Fully drawn whole-character frames. Nonuniform source rectangles intentionally preserve all sword tips. Body anchors are manual visual estimates in global source pixels. Alpha bounds use threshold 16.",
+  "frames": [
+    {
+      "index": 0,
+      "pose": "idle",
+      "rect": [
+        0,
+        0,
+        443,
+        475
+      ],
+      "headTopY": 113,
+      "footY": 447,
+      "chestX": 246,
+      "headToFootHeight": 334
+    },
+    {
+      "index": 1,
+      "pose": "crouched windup",
+      "rect": [
+        443,
+        0,
+        444,
+        475
+      ],
+      "headTopY": 159,
+      "footY": 447,
+      "chestX": 699,
+      "headToFootHeight": 288
+    },
+    {
+      "index": 2,
+      "pose": "paws raised beside face",
+      "rect": [
+        887,
+        0,
+        443,
+        475
+      ],
+      "headTopY": 132,
+      "footY": 447,
+      "chestX": 1140,
+      "headToFootHeight": 315
+    },
+    {
+      "index": 3,
+      "pose": "start rightward slash",
+      "rect": [
+        1330,
+        0,
+        444,
+        475
+      ],
+      "headTopY": 158,
+      "footY": 447,
+      "chestX": 1572,
+      "headToFootHeight": 289
+    },
+    {
+      "index": 4,
+      "pose": "across-body downward slash",
+      "rect": [
+        0,
+        475,
+        443,
+        412
+      ],
+      "headTopY": 522,
+      "footY": 823,
+      "chestX": 229,
+      "headToFootHeight": 301
+    },
+    {
+      "index": 5,
+      "pose": "low follow-through",
+      "rect": [
+        443,
+        475,
+        467,
+        412
+      ],
+      "headTopY": 553,
+      "footY": 824,
+      "chestX": 704,
+      "headToFootHeight": 271
+    },
+    {
+      "index": 6,
+      "pose": "recover handle to chest",
+      "rect": [
+        910,
+        475,
+        420,
+        412
+      ],
+      "headTopY": 507,
+      "footY": 827,
+      "chestX": 1140,
+      "headToFootHeight": 320
+    },
+    {
+      "index": 7,
+      "pose": "idle return",
+      "rect": [
+        1330,
+        475,
+        444,
+        412
+      ],
+      "headTopY": 507,
+      "footY": 823,
+      "chestX": 1565,
+      "headToFootHeight": 316
+    }
+  ]
+}

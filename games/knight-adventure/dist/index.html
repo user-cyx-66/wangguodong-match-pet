@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0e1423">
+  <meta name="description" content="与王果冻骑士和王德敏公主并肩作战，跨越荒原、密林、雪岭与王座，探索战区、升级装备、打败恶龙，救出蔡乙先王子。">
+  <title>王果冻骑士 · 荒原誓约</title>
+  <link rel="icon" type="image/svg+xml" href="assets/crest.svg">
+  <link rel="stylesheet" href="styles.css?v=hero-trial-20261026">
+  <script src="content.js?v=campaign-20261026" defer></script>
+  <script src="adventure.js?v=campaign-20261026" defer></script>
+  <script src="game.js?v=ikun-trial-v1-20261026" defer></script>
+  <script src="app.js?v=hero-trial-20261026" defer></script>
+</head>
+<body data-screen="menu" data-hero="ikun">
+  <div class="ambient" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="#" data-action="home" aria-label="返回游戏首页">
+      <img src="assets/crest.svg" width="38" height="44" alt="">
+      <span><strong>王果冻骑士</strong><small>荒 原 誓 约</small></span>
+    </a>
+    <div class="header-actions">
+      <span class="edition" id="hero-edition">ikun 骑士 · 试用形象</span>
+      <button class="icon-button" data-action="route" aria-label="查看战役地图">⌁ <span>旅途</span></button>
+      <button class="icon-button" data-action="sound" id="sound-button" title="关闭音效" aria-label="关闭音效">♫ <span>音效开</span></button>
+      <button class="icon-button" data-action="help" aria-label="查看操作说明">? <span>怎么玩</span></button>
+    </div>
+  </header>
+  <main>
+    <section id="menu-screen" class="menu-screen" aria-labelledby="hero-title">
+      <div class="hero-art" aria-hidden="true"><img id="hero-cover" src="assets/ikun-knight.png" alt=""><div class="art-shade"></div><span class="art-caption">风雨会停，骑士会继续向前。</span></div>
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> 王果冻与王德敏的冒险</div>
+        <h1 id="hero-title">很小的骑士。<br><em>很大的勇气。</em></h1>
+        <p class="hero-description">银甲、长剑，还有一位并肩作战的公主。<br>一路闯关、寻宝、成长，最后把蔡乙先王子接回家。</p>
+        <div class="hero-tags"><span id="campaign-count">战役闯关</span><span>战区探索</span><span>八阶装备</span></div>
+        <div id="menu-hero-picker"></div>
+        <div class="start-actions">
+          <button class="button primary large" id="continue-button" data-action="continue" hidden>继续旅程 <span aria-hidden="true">→</span></button>
+          <button class="button primary large" id="start-button" data-action="new">启程冒险 <span aria-hidden="true">→</span></button>
+        </div>
+        <p class="save-note" id="save-note">进度自动保存在当前浏览器 · 支持键盘与触屏</p>
+        <div class="companions"><div class="companion-mark">✦</div><p><strong>王德敏公主</strong><span>「路再远，也一起。」</span></p></div>
+      </div>
+      <div class="chapter-strip" id="chapter-strip" aria-label="完整战役路线"></div>
+    </section>
+    <section id="play-screen" class="play-screen" hidden aria-label="冒险游戏">
+      <div class="game-hud">
+        <div class="hero-vitals">
+          <div class="hero-avatar" id="player-avatar" data-hero="ikun"><img id="player-portrait" src="assets/ikun-knight.png" alt="ikun 骑士"></div>
+          <div class="vital-bars"><div class="vital-label"><strong id="player-name">ikun 骑士</strong><span id="player-level">Lv.1</span></div><div class="health-track"><div id="health-fill"></div><span id="health-text">100 / 100</span></div><div class="xp-track" title="经验"><div id="xp-fill"></div></div></div>
+        </div>
+        <div class="quest-hud"><div><span class="small-label" id="stage-number">新的旅程</span><strong id="stage-name">风雨荒原</strong></div><span id="quest-progress">沿誓灯前进</span></div>
+        <div class="resource-hud"><span class="coin-icon">◈</span><strong id="gold">0</strong><span class="resource-label">金币</span><button class="icon-button" data-action="pause" aria-label="暂停游戏">Ⅱ</button></div>
+      </div>
+      <div class="adventure-hud" aria-label="关卡探索进度">
+        <div class="adventure-objective"><span>当前目标</span><strong id="adventure-objective">清空战区，收集碎片，点亮誓灯。</strong></div>
+        <div class="exploration-stats"><span id="encounter-progress">战区 0 / 3</span><span id="relic-progress">碎片 0 / 3</span><span id="beacon-progress">誓灯 0 / 3</span><span id="chest-progress">宝箱 0 / 3</span><span id="checkpoint-status" title="靠近旗帜按 F 记录，第一次激活可恢复生命">检查点 · 尚未记录</span></div>
+      </div>
+      <div class="arena" id="arena">
+        <canvas id="game-canvas" width="1280" height="720" tabindex="0" aria-label="横版冒险游戏。A和D移动，空格跳跃，J挥剑，K冲刺，E公主合击，F与誓灯、宝箱、检查点、光门交互，并解救王子。">请使用支持 Canvas 的现代浏览器。</canvas>
+        <div id="boss-hud" class="boss-hud" hidden><div><span id="boss-kind">精英对决</span><strong id="boss-name">精英守卫</strong></div><div class="boss-track"><div id="boss-fill"></div></div></div>
+        <div class="ally-badge"><span>✦</span><p><strong>王德敏公主</strong><small>自动跟随 · 魔法支援</small></p></div>
+        <div class="combo-hud"><div class="combo-icon" id="combo-icon">E</div><div><strong id="combo-label">誓约合击</strong><div class="combo-track"><div id="combo-fill"></div></div><small id="combo-hint">攻击蓄能</small></div></div>
+        <div id="game-overlay" class="game-overlay" hidden><div id="dialog-panel" class="dialog-panel" role="dialog" aria-modal="true" aria-label="游戏提示"></div></div>
+        <div class="toast-stack" id="toasts" aria-live="polite"></div>
+      </div>
+      <div class="control-bar"><div><kbd>A</kbd><kbd>D</kbd><span>移动</span><kbd>空格</kbd><span>二段跳</span><kbd>J</kbd><span>连击</span><kbd>K</kbd><span>冲刺</span><kbd>E</kbd><span>合击</span><kbd>F</kbd><span>交互</span></div><span class="auto-save"><i></i> 自动存档</span></div>
+      <div class="touch-controls" id="touch-controls" aria-label="触屏操作"><div><button data-input="left" aria-label="向左移动">◀</button><button data-input="right" aria-label="向右移动">▶</button></div><div><button data-input="dash" aria-label="冲刺">冲刺</button><button data-input="combo" aria-label="合击">合击</button><button class="touch-attack" data-input="attack" aria-label="挥剑">挥剑</button><button data-input="jump" aria-label="跳跃">跳跃</button><button data-input="interact" aria-label="与誓灯、宝箱、检查点和光门交互，并解救王子">交互</button></div></div>
+    </section>
+  </main>
+  <footer class="site-footer"><span>王果冻骑士 · 荒原誓约</span><span>献给每一位小小的勇者</span></footer>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fbf6ee"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="果冻小窝"><meta name="application-name" content="果冻小窝"><meta name="description" content="消掉一点烦恼，攒下好多喜欢。苹果与安卓都能玩的猫咪消除小窝，安装到主屏幕后可离线玩。"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><title>王果冻的消消小窝</title>
+  <link rel="icon" href="assets/cat-idle.png"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="feel.css"><link rel="stylesheet" href="mobile.css">
+  <script src="config.js" defer></script><script src="engine.js" defer></script><script src="audio.js" defer></script><script src="effects.js" defer></script><script src="app.js" defer></script><script src="mobile.js" defer></script>
+</head>
+<body data-view="game">
+  <div class="page-decor decor-one" aria-hidden="true">✦</div><div class="page-decor decor-two" aria-hidden="true">✧</div>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="消消小窝首页"><span class="brand-mark" data-icon="paw"></span><span><strong><span data-petname>王果冻</span>的消消小窝</strong><small>A LITTLE MATCH, A LOT OF LOVE</small></span></a>
+    <div class="header-actions"><span class="wallet"><span data-icon="fish"></span><b id="wallet">0</b><span>小鱼干</span></span><button class="icon-btn" id="music" title="背景音乐" aria-label="背景音乐" data-icon="music"></button><button class="icon-btn" id="sound" title="消除音效" aria-label="消除音效" data-icon="sound"></button><button class="icon-btn" id="settings" title="存档与设置" aria-label="存档与设置" data-icon="settings"></button></div>
+  </header><div class="mobile-toolbar"><span class="offline-status" id="offline-status" role="status">正在准备离线小窝…</span><button class="install-button" id="install-app">安装到手机</button></div>
+  <main class="layout">
+    <aside class="left-column">
+      <div class="intro"><span class="eyebrow"><i></i> 今天也有猫陪你</span><h1>消掉一点烦恼，<br>攒下好多<span>喜欢。</span></h1><p>一口甜甜的消除，一只软软的小猫。<br>给自己留一小会儿开心的时间吧。</p></div>
+      <nav class="mode-switch" aria-label="游戏模式"><button class="active" id="story-mode"><span data-icon="flag"></span>交换三消</button><button id="pop-mode"><span data-icon="sparkle"></span>点点连消</button><button id="zen-mode"><span data-icon="leaf"></span>无限放松</button></nav>
+      <section class="card journey"><div class="section-title"><h2>小窝旅行记</h2><span id="journey-count">1 / 12</span></div><p>每一站，都有一点小惊喜</p><div id="level-map" class="level-map"></div><div class="journey-foot"><span data-icon="heart"></span><span>慢慢玩，没有时间限制</span></div></section>
+      <section class="card pop-guide" id="pop-guide" hidden><span class="eyebrow">ONE TAP, A BIG LITTLE JOY</span><h2>一口气，消一大片。</h2><p>点相连的同色点心，<b>2 颗起消</b>。<br>连得越多，分数越痛快。</p><div class="pop-examples"><span><b>2</b>颗<small>20 分</small></span><span><b>5</b>颗<small>125 分</small></span><span><b>10</b>颗<small>500 分</small></span></div><p>不补新点心，空列向左靠拢。<br>剩得越少，结算奖励越多。</p><div class="pop-bonus">全部清空 <b>+2000</b> 分</div></section>
+      <button class="help-link" id="help"><span data-icon="book"></span>第一次玩？看看小指南 <span>↗</span></button>
+      <div class="left-note"><span>✦</span><p>把普通的一天，<br>过成有猫的小日子。</p></div>
+    </aside>
+    <section class="game-column" aria-label="消消乐游戏">
+      <div class="game-top"><div><span class="eyebrow" id="level-label">CHAPTER 01</span><h2 id="level-name">第一份小鱼干</h2></div><span class="difficulty" id="mode-badge">轻轻松松</span></div>
+      <div class="scorebar"><div class="moves-stat"><span id="moves">24</span><small id="moves-caption">剩余步数</small></div><div class="target-stat"><div><span id="score-caption">甜蜜积分</span><strong><b id="score">0</b><span id="score-goal"> / 900</span></strong></div><div class="progress-track"><div id="score-fill"></div><span>✦</span></div><div class="goals" id="extra-goals"></div></div></div>
+      <div class="flow-banner" id="flow-banner"><span>✦ 点击特效点心，就能直接引爆</span><b id="chain-label">READY TO POP</b></div>
+      <div class="board-shell"><div class="board" id="board" role="grid" aria-label="八行八列消除棋盘"></div><div id="board-fx" aria-hidden="true"></div><canvas id="effects-canvas" aria-hidden="true"></canvas><div class="combo-pop" id="combo-pop" aria-live="polite"></div><div class="pause-cover" id="pause-cover" hidden><span data-icon="moon"></span><h3>歇一小会儿</h3><p>点心和果冻都在等你</p><button class="primary" id="resume">继续玩</button></div></div>
+      <div class="tools"><button id="hint"><span data-icon="bulb"></span><span>小提示</span><small>免费</small></button><button id="shuffle"><span data-icon="shuffle"></span><span>换一盘</span><small>免费</small></button><button id="hammer"><span data-icon="hammer"></span><span>小锤子</span><small id="hammer-count">1 次</small></button><button id="pause"><span data-icon="pause"></span><span>歇一会</span><small>暂停</small></button></div>
+        <button class="cat-skill" id="cat-skill"><span class="skill-icon" data-icon="paw"></span><span><strong>果冻来帮忙</strong><small id="skill-caption">消除 24 颗点心，攒满猫爪能量</small></span><span id="skill-count">0/24</span><i id="skill-fill"></i></button>
+      <p class="board-tip" id="board-tip"><span data-icon="sparkle"></span>交换相邻点心，三个相同就会发生好事。</p>
+    </section>
+    <aside class="pet-column">
+      <section class="pet-card card"><div class="pet-heading"><div><span class="eyebrow">YOUR LITTLE COMPANION</span><h2><span data-petname>王果冻</span><span class="pet-dot"></span></h2></div><span class="pet-level" id="pet-level">Lv. 1</span></div>
+        <div class="pet-room" id="pet-room"><div class="room-window"><span></span><i></i></div><div class="room-plant" aria-hidden="true"><i></i><i></i><i></i><b></b></div><div class="room-picture" aria-hidden="true">♡</div><div class="speech" id="pet-speech">你来啦，今天也一起开心吧。</div><div class="pet-rug"></div><button class="cat-button" id="pet-cat" aria-label="摸摸王果冻"><img id="cat-image" src="assets/cat-idle.png" alt="陪伴你的狸花白猫王果冻" draggable="false"></button><div id="pet-hearts" aria-hidden="true"></div><span class="room-caption" id="room-caption">一号小窝 · 奶油晴天</span></div>
+        <div class="pet-status"><div><span>亲密度 <b id="bond">0</b></span><small id="bond-label">初次见面</small></div><div class="bond-track"><div id="bond-fill"></div></div></div>
+        <div class="pet-actions"><button id="pet-touch"><span data-icon="heart"></span>摸摸</button><button id="pet-feed"><span data-icon="fish"></span>喂鱼 <small>5</small></button><button id="pet-sleep"><span data-icon="moon"></span>睡个觉</button></div>
+
+      </section>
+      <section class="card decor-card"><div class="section-title"><h2>给小窝换个心情</h2><span>小鱼干兑换</span></div><div class="room-options" id="room-options"></div></section>
+      <button class="desktop-card" id="desktop-mode"><span class="desktop-icon" data-icon="monitor"></span><span><strong>关于这个小窝</strong><small id="desktop-caption">iPhone 安装版 · 首次打开即可离线玩</small></span><span>↗</span></button>
+      <button class="mobile-return" id="pet-back-to-game">果冻陪你，继续消消乐 →</button>
+      <div class="saved-indicator" id="save-status"><i></i> 进度会自动保存在这台设备</div>
+    </aside>
+  </main>
+  <footer class="site-footer"><span>MADE OF LITTLE SWEET THINGS <i>♡</i></span><span>你负责开心，果冻负责陪伴。</span></footer>
+<nav class="phone-nav" aria-label="手机导航"><button data-view-target="game" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><path d="m17.5 13 1.5 3 3 .5-2.5 2.5.5 3-2.5-1.5-3 1.5.5-3-2-2.5 3-.5Z"/></svg><span>消消乐</span></button><button data-view-target="pet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15c1-6 11-6 12 0s-4 6-6 4c-2 2-7 2-6-4Z"/><ellipse cx="4" cy="8" rx="2" ry="3"/><ellipse cx="10" cy="5" rx="2" ry="3"/><ellipse cx="16" cy="5" rx="2" ry="3"/><ellipse cx="21" cy="9" rx="2" ry="3"/></svg><span>果冻小窝</span></button><button data-view-target="journey"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 22V3c5-5 9 5 15 0v11c-6 5-10-5-15 0"/></svg><span>关卡</span></button></nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="modal"><div id="modal-content"></div></dialog>
+</body></html>

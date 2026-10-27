@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.openai/
+.browser-profile/
+browser-profile/
+qa*/
+*.log
+*.tar.gz
+*.tgz
+*.zip
+.DS_Store
+Thumbs.db
