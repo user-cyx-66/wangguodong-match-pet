@@ -26,10 +26,10 @@
     const stage = game.stage || {};
     const encounters = objects(stage,'encounters','encounter').sort((a,b)=>a.x-b.x).map((item,index) => ({
       ...item,label:item.label || `第${labelNumber(index)}段遭遇战`,
-      arena:[Math.max(30,item.x-180),Math.min((game.worldWidth||stage.width||6000)-35,item.x+850)],enemyIds:new Set()
+      arena:[Math.max(30,item.x-180),Math.min((game.worldWidth||stage.width||6000)-35,item.x+number(item.span,850))],enemyIds:new Set()
     }));
     const relics = objects(stage,'relics','relic'), beacons = objects(stage,'beacons','beacon');
-    const chests = objects(stage,'chests','chest'), checkpoints = objects(stage,'checkpoints','checkpoint').map((item,index)=>({...item,label:item.label||`检查点${labelNumber(index)}`}));
+    const chests = objects(stage,'chests','chest'), checkpoints = []; // Manual checkpoint objects are intentionally retired.
     const hazards = objects(stage,'hazardZones','hazard').map((item,index) => {
       const period = Math.max(2.5,number(item.period,5));
       const active = clamp(number(item.active,1.15),.3,period-1.05);
@@ -37,14 +37,15 @@
     });
     const snapshot = saved && (!saved.stageId || String(saved.stageId)===stageId(game)) ? saved : {};
     const a = {
-      version:1,stageId:stageId(game),elapsed:0,encounters,relicItems:relics,beaconItems:beacons,chestItems:chests,checkpointItems:checkpoints,hazards,
+      version:2,stageId:stageId(game),elapsed:0,encounters,relicItems:relics,beaconItems:beacons,chestItems:chests,checkpointItems:checkpoints,hazards,
       clearedEncounters:owned(snapshot.clearedEncounters,encounters),relics:owned(snapshot.relics,relics),beacons:owned(snapshot.beacons,beacons),chests:owned(snapshot.chests,chests),
       checkpointIds:owned(snapshot.checkpointIds,checkpoints),checkpointId:null,checkpointX:140,checkpointLabel:'旅途起点',activeEncounter:null,
       ripples:[],hazardWarnings:new Map(),hazardCooldowns:new Map(),doorHintAt:-10,interacted:false
     };
-    let checkpoint = checkpoints.find(item=>item.id===String(snapshot.checkpointId));
-    if (!checkpoint && a.checkpointIds.size) checkpoint = checkpoints.filter(item=>a.checkpointIds.has(item.id)).sort((x,y)=>y.x-x.x)[0];
-    if (checkpoint) {a.checkpointIds.add(checkpoint.id);a.checkpointId=checkpoint.id;a.checkpointX=checkpoint.x;a.checkpointLabel=checkpoint.label;}
+    // Resume after cleared encounters; old manual checkpoint coordinates are not trusted on rebuilt maps.
+    for(const encounter of encounters)if(a.clearedEncounters.has(encounter.id))a.checkpointX=Math.max(a.checkpointX,encounter.arena[1]+35);
+    a.checkpointX=clamp(a.checkpointX,140,(game.worldWidth||6000)-210);a.checkpointLabel='自动保存';
+    for(const gap of list(stage.obstacles).filter(item=>item.kind==='gap'))if(a.checkpointX>gap.x-25&&a.checkpointX<gap.x+gap.w+25)a.checkpointX=gap.x-60;
     game.adventure = a;
     const configs = list(stage.enemies);
     for (let index=0;index<(game.enemies||[]).length;index++) {
@@ -66,30 +67,27 @@
 
   function members(game, encounter) { return (game.enemies||[]).filter(enemy=>enemy.encounter===encounter.id); }
   function remaining(game, encounter) { return members(game,encounter).filter(enemy=>enemy.hp>0).length; }
-  function needed(items) { return Math.min(3,items.length); }
+  function needed(items) { return items.length; }
 
   function canExit(game) {
     const a=stateOf(game);
-    return a.clearedEncounters.size>=a.encounters.length && (game.enemies||[]).every(enemy=>enemy.hp<=0) && a.relics.size>=needed(a.relicItems) && a.beacons.size>=needed(a.beaconItems);
+    return a.clearedEncounters.size>=a.encounters.length && (game.enemies||[]).every(enemy=>enemy.hp<=0);
   }
 
   function objective(game) {
     const a=stateOf(game),active=a.encounters.find(item=>item.id===a.activeEncounter);
     if(active)return `遭遇战 · ${active.label} · 剩余 ${remaining(game,active)} 个敌人`;
     if(canExit(game))return game.stageIndex===(game.levels?.length||12)-1?'前往右侧囚笼，按 F 救出蔡乙先王子':'光门已开启 · 前往右侧出口，按 F 进入营地';
-    const relicNeed=needed(a.relicItems),beaconNeed=needed(a.beaconItems),next=a.encounters.find(item=>!a.clearedEncounters.has(item.id));
-    const missing=[...a.relicItems.filter(item=>!a.relics.has(item.id)).map(item=>({...item,kind:'星辉碎片'})),...a.beaconItems.filter(item=>!a.beacons.has(item.id)).map(item=>({...item,kind:'誓灯'}))];
-    const behind=missing.filter(item=>item.x<game.player.x-110).sort((x,y)=>y.x-x.x)[0];
-    if(behind)return `← 沿路找回${behind.kind} · 碎片 ${a.relics.size}/${relicNeed} · 誓灯 ${a.beacons.size}/${beaconNeed}`;
-    if(next)return `前往 ${next.label} · 碎片 ${a.relics.size}/${relicNeed} · 誓灯 ${a.beacons.size}/${beaconNeed}`;
-    return `寻找剩余目标 · 星辉碎片 ${a.relics.size}/${relicNeed} · 誓灯 ${a.beacons.size}/${beaconNeed}`;
+    const next=a.encounters.find(item=>!a.clearedEncounters.has(item.id));
+    if(next)return (game.stage.feature?game.stage.feature+' · ':'')+`前往 ${next.label} · 支路奖励可自由探索`;
+    return '沿主路继续前进 · 星辉与宝箱是可选奖励';
   }
 
   function state(game) {
     const a=stateOf(game),active=a.encounters.find(item=>item.id===a.activeEncounter);
     return {
       relics:{collected:a.relics.size,total:needed(a.relicItems)},beacons:{lit:a.beacons.size,total:needed(a.beaconItems)},chests:{opened:a.chests.size,total:a.chestItems.length},
-      encounters:{cleared:a.clearedEncounters.size,total:a.encounters.length},checkpoint:{id:a.checkpointId,x:a.checkpointX,label:a.checkpointLabel},
+      encounters:{cleared:a.clearedEncounters.size,total:a.encounters.length},checkpoint:{id:null,x:a.checkpointX,label:'自动保存',automatic:true},
       activeEncounter:active?{id:active.id,label:active.label,remaining:remaining(game,active),arena:[...active.arena]}:null,canExit:canExit(game),objective:objective(game)
     };
   }
@@ -99,15 +97,18 @@
     // A kill can save during impact freeze, before the next exploration update.
     const cleared=new Set(a.clearedEncounters);
     for(const encounter of a.encounters){const group=members(game,encounter);if(group.length&&group.every(enemy=>enemy.hp<=0))cleared.add(encounter.id);}
-    return {version:1,stageId:a.stageId,clearedEncounters:[...cleared],relics:[...a.relics],beacons:[...a.beacons],chests:[...a.chests],checkpointIds:[...a.checkpointIds],checkpointId:a.checkpointId,checkpointX:a.checkpointX,checkpointLabel:a.checkpointLabel};
+    let checkpointX=140;for(const encounter of a.encounters)if(cleared.has(encounter.id))checkpointX=Math.max(checkpointX,encounter.arena[1]+35);
+    checkpointX=clamp(checkpointX,140,(game.worldWidth||6000)-210);
+    for(const gap of list(game.stage.obstacles).filter(item=>item.kind==='gap'))if(checkpointX>gap.x-25&&checkpointX<gap.x+gap.w+25)checkpointX=gap.x-60;
+    return {version:2,stageId:a.stageId,clearedEncounters:[...cleared],relics:[...a.relics],beacons:[...a.beacons],chests:[...a.chests],checkpointIds:[],checkpointId:null,checkpointX,checkpointLabel:'自动保存'};
   }
 
   function encounterUpdate(game,a) {
     let active=a.encounters.find(item=>item.id===a.activeEncounter);
     if(active && remaining(game,active)===0){
-      a.clearedEncounters.add(active.id);a.activeEncounter=null;
+      a.clearedEncounters.add(active.id);a.activeEncounter=null;a.checkpointX=Math.max(a.checkpointX,Math.min(game.worldWidth-210,active.arena[1]+35));
       a.ripples.push({x:(active.arena[0]+active.arena[1])*.5,y:GROUND-70,life:1.5,max:1.5,color:'#e4d49c'});
-      emit(game,`${active.label} 已清理 · 战区解锁，继续探索`);sound(game,'clear');save(game);active=null;
+      emit(game,`${active.label} 已清理 · 进度已自动保存`);sound(game,'clear');save(game);active=null;
     }
     if(!active){
       const next=a.encounters.find(item=>!a.clearedEncounters.has(item.id));
@@ -133,42 +134,29 @@
   function collectRelics(game,a) {
     for(const item of a.relicItems){
       if(a.relics.has(item.id) || !closeTo(game,item,37))continue;
-      a.relics.add(item.id);burst(game,item.x,centerY(item),'#acdff0',22);sound(game,'coin');
+      a.relics.add(item.id);game.gold=(game.gold||0)+12+(game.stageIndex||0)*2;burst(game,item.x,centerY(item),'#acdff0',22);sound(game,'coin');
       a.ripples.push({x:item.x,y:centerY(item),life:.75,max:.75,color:'#b7e4ef'});
-      emit(game,`找到星辉碎片 ${a.relics.size}/${needed(a.relicItems)} · 小小的光，也会照亮长路`);save(game);
+      emit(game,`支路星辉 +${12+(game.stageIndex||0)*2} 金币 · 可选探索奖励`);save(game);
+    }
+  }
+
+  function lightNearbyBeacons(game,a) {
+    for(const item of a.beaconItems){
+      if(a.beacons.has(item.id)||!closeTo(game,item,95))continue;
+      a.beacons.add(item.id);burst(game,item.x,item.y-74,'#f1d99b',12);sound(game,'coin');save(game);
     }
   }
 
   function interact(game,a) {
     a.interacted=false;
     if(!game.pressed?.interact)return;
-    const candidates=[];
-    for(const item of a.beaconItems)if(!a.beacons.has(item.id)&&closeTo(game,item))candidates.push({item,kind:'beacon'});
-    for(const item of a.chestItems)if(!a.chests.has(item.id)&&closeTo(game,item))candidates.push({item,kind:'chest'});
-    for(const item of a.checkpointItems)if(a.checkpointId!==item.id&&closeTo(game,item))candidates.push({item,kind:'checkpoint'});
-    candidates.sort((x,y)=>Math.abs(x.item.x-game.player.x)-Math.abs(y.item.x-game.player.x));
-    const candidate=candidates[0];
+    const candidate=a.chestItems.filter(item=>!a.chests.has(item.id)&&closeTo(game,item)).sort((x,y)=>Math.abs(x.x-game.player.x)-Math.abs(y.x-game.player.x))[0];
     if(candidate){
-      const {item,kind}=candidate;a.interacted=true;
-      if(kind==='beacon'){
-        a.beacons.add(item.id);burst(game,item.x,item.y-74,'#f1d99b',20);sound(game,'upgrade');
-        emit(game,`誓灯已点亮 ${a.beacons.size}/${needed(a.beaconItems)} · 王德敏的魔法照亮了道路`);
-      }else if(kind==='chest'){
-        const gold=Math.max(1,Math.floor(number(item.gold,35)));
-        a.chests.add(item.id);game.gold=(game.gold||0)+gold;burst(game,item.x,item.y-25,'#e8ce85',20);sound(game,'coin');
-        emit(game,`打开旅人宝箱 · 获得 ${gold} 金币`);
-      }else{
-        const first=!a.checkpointIds.has(item.id);a.checkpointIds.add(item.id);
-        a.checkpointId=item.id;a.checkpointX=item.x;a.checkpointLabel=item.label;
-        if(first){
-          const maxHp=typeof game._stats==='function'?game._stats().maxHp:(game.player.maxHp||100);
-          game.player.hp=Math.min(maxHp,game.player.hp+Math.ceil(maxHp*.4));burst(game,item.x,item.y-40,'#d4c4ed',23);sound(game,'upgrade');
-        }
-        emit(game,`${item.label}已记录${first?' · 恢复部分生命':''}，倒下后从这里再出发`);
-      }
-      save(game);
-    }else if(Math.abs(game.player.x-(game.stage.portalX||game.worldWidth-130))<135&&!canExit(game)&&a.elapsed-a.doorHintAt>1){
-      a.doorHintAt=a.elapsed;emit(game,`${game.stageIndex===(game.levels?.length||12)-1?'囚笼封印仍未解除':'光门仍在等待'}：战区 ${a.clearedEncounters.size}/${a.encounters.length}，碎片 ${a.relics.size}/${needed(a.relicItems)}，誓灯 ${a.beacons.size}/${needed(a.beaconItems)}`);
+      const gold=Math.max(1,Math.floor(number(candidate.gold,35)));a.interacted=true;
+      a.chests.add(candidate.id);game.gold=(game.gold||0)+gold;burst(game,candidate.x,candidate.y-25,'#e8ce85',20);sound(game,'coin');
+      emit(game,`打开旅人宝箱 · 获得 ${gold} 金币`);save(game);
+    }else if(Math.abs(game.player.x-(game.stage.portalX||game.worldWidth-130))<135&&!canExit(game)&&a.elapsed-a.doorHintAt>2){
+      a.doorHintAt=a.elapsed;emit(game,`前方还有敌人：遭遇战 ${a.clearedEncounters.size}/${a.encounters.length}，支路奖励不影响开门`);
     }
   }
 
@@ -194,7 +182,7 @@
       if((p.invuln||0)>0 || (a.hazardCooldowns.get(h.id)||0)>a.elapsed)continue;
       a.hazardCooldowns.set(h.id,a.elapsed+1.05);
       const damage=number(h.damage,h.type==='flame'?15:h.type==='ice'?8:12)+Math.floor((game.stageIndex||0)/4);
-      if(typeof game._damagePlayer==='function')game._damagePlayer(damage,p.x<h.x+h.w*.5?-140:140);
+      if(typeof game._damagePlayer==='function')game._damagePlayer(damage,p.x<h.x+h.w*.5?-140:140,h.x+h.w*.5,false);
     }
   }
 
@@ -206,6 +194,7 @@
     a.ripples=a.ripples.filter(ripple=>ripple.life>0);
     encounterUpdate(game,a);
     collectRelics(game,a);
+    lightNearbyBeacons(game,a);
     interact(game,a);
     hazardUpdate(game,a,dt);
   }
@@ -235,7 +224,7 @@
     c.fillStyle=lit?'#ecd59a':'#7b8b91';c.beginPath();c.moveTo(0,-82);c.lineTo(12,-66);c.lineTo(0,-51);c.lineTo(-12,-66);c.closePath();c.fill();
     c.strokeStyle=lit?'#f3e8bb':'#a3b6b9';c.lineWidth=1.4;c.beginPath();c.arc(0,-66,18,Math.sin(t)*.2,Math.PI*1.7+Math.sin(t)*.2);c.stroke();
     if(lit){c.strokeStyle='rgba(244,220,158,.4)';c.beginPath();c.ellipse(0,-42+Math.sin(t*2)*2,27,6,0,0,Math.PI*2);c.stroke();}
-    c.restore();if(closeTo(game,item,135))text(c,lit?'誓灯已点亮':'F  点亮誓灯',item.x,item.y-104,14,lit?'#dfcf9b':'#e6e1cf');
+    c.restore();if(closeTo(game,item,135))text(c,lit?'路灯已自动点亮':'靠近自动点亮',item.x,item.y-104,14,lit?'#dfcf9b':'#e6e1cf');
   }
 
   function drawChest(game,c,a,item) {
@@ -246,17 +235,6 @@
     c.fillStyle='#c6ab72';c.fillRect(-13,-29,3,28);c.fillRect(10,-29,3,28);c.fillRect(-3,-19,6,8);
     if(open){c.fillStyle='#e7cf8c';c.beginPath();c.ellipse(0,-17,9,3,0,0,Math.PI*2);c.fill();}
     c.restore();if(closeTo(game,item,140))text(c,open?'旅人宝箱 · 已开启':`F  开启宝箱 · ${Math.floor(number(item.gold,35))} 金币`,item.x,item.y-64,13,open?'#b6bfb3':'#ebd398');
-  }
-
-  function drawCheckpoint(game,c,a,item,t) {
-    const activated=a.checkpointIds.has(item.id),current=a.checkpointId===item.id;
-    c.save();c.translate(item.x,item.y);
-    if(current)glow(c,0,-36,77,'rgba(190,168,228,.16)');
-    c.fillStyle='#45545c';c.beginPath();c.moveTo(-20,0);c.lineTo(-14,-10);c.lineTo(11,-10);c.lineTo(18,0);c.closePath();c.fill();
-    c.strokeStyle=activated?'#c7c1d8':'#a0aab1';c.lineWidth=3;c.beginPath();c.moveTo(0,-7);c.lineTo(0,-96);c.stroke();
-    c.fillStyle=activated?'#b7a2cd':'#79798e';c.beginPath();c.moveTo(2,-89);c.bezierCurveTo(14,-95,24,-81,36+Math.sin(t*3)*3,-85);c.lineTo(33,-57);c.bezierCurveTo(20,-54,15,-67,2,-62);c.closePath();c.fill();
-    c.strokeStyle='#e4d8c6';c.lineWidth=1;c.beginPath();c.moveTo(15,-81);c.lineTo(22,-73);c.lineTo(15,-65);c.moveTo(10,-73);c.lineTo(27,-73);c.stroke();
-    c.restore();if(closeTo(game,item,140))text(c,current?`${item.label} · 已记录`:`F  记录${item.label}${activated?'':' · 恢复生命'}`,item.x,item.y-115,13,current?'#d3c8e9':'#e7e1d3');
   }
 
   function drawHazard(game,c,a,h,t) {
@@ -334,11 +312,10 @@
     for(const item of a.relicItems)if(visible(game,item.x))drawRelic(game,c,a,item,t);
     for(const item of a.beaconItems)if(visible(game,item.x))drawBeacon(game,c,a,item,t);
     for(const item of a.chestItems)if(visible(game,item.x))drawChest(game,c,a,item);
-    for(const item of a.checkpointItems)if(visible(game,item.x))drawCheckpoint(game,c,a,item,t);
     drawArena(game,c,a,t);
     for(const ripple of a.ripples){if(!visible(game,ripple.x))continue;c.save();c.globalAlpha=ripple.life/ripple.max;c.strokeStyle=ripple.color;c.lineWidth=2;c.beginPath();c.arc(ripple.x,ripple.y,20+(1-ripple.life/ripple.max)*65,0,Math.PI*2);c.stroke();c.restore();}
     const portalX=game.stage.portalX||game.worldWidth-130;
-    if(!canExit(game)&&Math.abs(game.player.x-portalX)<240)text(c,`${game.stageIndex===(game.levels?.length||12)-1?'囚笼封印 · ':''}星辉 ${a.relics.size}/${needed(a.relicItems)} · 誓灯 ${a.beacons.size}/${needed(a.beaconItems)} · 战区 ${a.clearedEncounters.size}/${a.encounters.length}`,portalX,GROUND-194,14,'#d8d8cb');
+    if(!canExit(game)&&Math.abs(game.player.x-portalX)<240)text(c,`还有未完成的战斗 · ${a.clearedEncounters.size}/${a.encounters.length}`,portalX,GROUND-194,14,'#d8d8cb');
     c.restore();
   }
 

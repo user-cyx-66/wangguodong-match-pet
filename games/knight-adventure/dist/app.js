@@ -7,10 +7,12 @@
   const symbols={weapon:'⚔',armor:'♜',charm:'✦'};
   const menu=$('menu-screen'),play=$('play-screen'),overlay=$('game-overlay'),dialog=$('dialog-panel');
   let game,state={},panel=null,sound=true,menuAux=null,panelStack=[];
-  const heroChoiceKey='wangguodong-knight-hero-v1';
-  const heroes={ikun:{name:'ikun 骑士',portrait:'assets/ikun-knight.png',cover:'assets/ikun-knight.png'},wangguodong:{name:'王果冻',portrait:'assets/cat-portrait.png',cover:'assets/knight-cover.png'}};
-  let preferredHero='ikun',renderedHero=null;
-  try{const saved=localStorage.getItem(heroChoiceKey);if(Object.hasOwn(heroes,saved))preferredHero=saved;}catch{}
+  let previousHp=null,previousStage=-1,damageFeedbackToken=0;
+  const heroes={ikun:{name:'银发小鸡骑士',portrait:'assets/ikun-knight.png',cover:'assets/ikun-knight.png'}};
+  const preferredHero='ikun';let renderedHero=null;
+  const setText=(id,value)=>{const node=$(id),text=String(value);if(node&&node.textContent!==text)node.textContent=text;};
+  const setFill=(id,value)=>{const node=$(id),width=Math.max(0,Math.min(100,value))+'%';if(node&&node.style.width!==width)node.style.width=width;};
+  function pulseInput(action){if(panel||play.hidden)return;game.setInput(action,true);setTimeout(()=>game.setInput(action,false),60);$('game-canvas').focus({preventScroll:true});}
   const chapter=index=>index===total-1?'终章 · '+(index+1)+' / '+total:'第 '+(index+1)+' / '+total+' 章';
   const dialogue=lines=>'<div class="dialog-lines">'+(lines||[]).map(l=>'<p><strong>'+esc(l.speaker)+'</strong>'+esc(l.text)+'</p>').join('')+'</div>';
   const countText=(item,key,totalFallback)=>Math.max(0,Number(item?.[key])||0)+' / '+Math.max(0,Number(item?.total ?? totalFallback)||0);
@@ -20,58 +22,79 @@
     while($('toasts').children.length>3)$('toasts').firstChild.remove();
   }
   function heroPickerHtml(){
-    const selected=game?.heroId||preferredHero;
-    return '<div class="hero-picker" role="group" aria-label="选择骑士形象"><div class="hero-picker-label">出战形象 <small>随时切换 · 沿用当前旅程</small></div><div class="hero-options">'+Object.entries(heroes).map(([id,hero])=>'<button class="hero-option" data-action="select-hero" data-hero="'+id+'" aria-pressed="'+(id===selected)+'"><span aria-hidden="true">'+(id==='ikun'?'✦':'♜')+'</span>'+hero.name+(id==='ikun'?'<small>试用</small>':'')+'</button>').join('')+'</div></div>';
+    return '<div class="hero-picker"><div class="hero-picker-label">出战角色 <small>独自握剑 · 召唤同行</small></div><div class="hero-identity"><span aria-hidden="true">✦</span><strong>银发小鸡骑士</strong><small>王果冻 · 可召唤坐骑</small></div></div>';
   }
   function renderHero(id,force=false){
-    if(!Object.hasOwn(heroes,id))id=preferredHero;
-    if(id===renderedHero&&!force)return;
+    id='ikun';if(id===renderedHero&&!force)return;
     renderedHero=id;const hero=heroes[id];document.body.dataset.hero=id;
-    $('player-name').textContent=hero.name;$('player-avatar').dataset.hero=id;
+    setText('player-name',hero.name);$('player-avatar').dataset.hero=id;
     $('player-portrait').src=hero.portrait;$('player-portrait').alt=hero.name;$('hero-cover').src=hero.cover;
-    $('hero-edition').textContent=id==='ikun'?'ikun 骑士 · 试用形象':'一只小猫的英雄旅程';
-    document.querySelectorAll('[data-action="select-hero"]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.hero===id)));
-  }
-  function selectHero(id){
-    if(!Object.hasOwn(heroes,id)||!game?.setHero(id))return;
-    preferredHero=id;try{localStorage.setItem(heroChoiceKey,id);}catch{}
-    renderHero(id,true);
-    if(!play.hidden){toast('已换为'+heroes[id].name+' · 旅程继续');if(!panel)$('game-canvas').focus({preventScroll:true});}
+    setText('hero-edition','单人战役 · 召唤之约');
   }
   function updateState(s){
-    state=s||{};
-    renderHero(state.heroId||game?.heroId||preferredHero);
+    state=s||{};renderHero('ikun');
     const hp=Math.max(0,state.hp||0),max=Math.max(1,state.maxHp||100),index=Number(state.stageIndex)||0,level=levels[index]||{};
-    $('health-fill').style.width=Math.max(0,Math.min(100,hp/max*100))+'%';
-    $('health-text').textContent=Math.ceil(hp)+' / '+max;
-    $('xp-fill').style.width=Math.min(100,(state.xp||0)/Math.max(1,state.xpToNext||100)*100)+'%';
-    $('player-level').textContent='Lv.'+(state.level||1);$('gold').textContent=Math.floor(state.gold||0);
-    $('stage-number').textContent=chapter(index);$('stage-name').textContent=state.stageName||level.name||'风雨荒原';
+    const healthRatio=hp/max,healthText=Math.ceil(hp)+' / '+max;
+    setFill('health-fill',healthRatio*100);setText('health-text',healthText);
+    setFill('battle-health-fill',healthRatio*100);setText('battle-health-text',healthText);
+    $('battle-health-meter').setAttribute('aria-valuenow',String(Math.round(healthRatio*100)));
+    const lowHealth=hp>0&&healthRatio<=.3;
+    document.body.classList.toggle('low-health',lowHealth);$('health-warning').hidden=!lowHealth;
+    if(previousHp!==null&&previousStage===index&&hp<previousHp&&!play.hidden){
+      const token=++damageFeedbackToken;
+      document.body.classList.add('player-hurt');setText('damage-feedback','−'+Math.ceil(previousHp-hp));
+      setTimeout(()=>{if(token===damageFeedbackToken){document.body.classList.remove('player-hurt');setText('damage-feedback','');}},420);
+    }
+    previousHp=hp;previousStage=index;
+    setFill('xp-fill',(state.xp||0)/Math.max(1,state.xpToNext||100)*100);
+    setText('player-level','Lv.'+(state.level||1));setText('gold',Math.floor(state.gold||0));
+    setText('stage-number',chapter(index));setText('stage-name',state.stageName||level.name||'风雨荒原');
     const adv=state.adventure||{},active=adv.activeEncounter,encounters=adv.encounters||{};
     const remaining=state.enemiesRemaining??Math.max(0,(state.stageTotal||0)-(state.stageKills||0));
-    $('quest-progress').textContent=active?active.label+' · 剩余 '+Math.max(0,active.remaining??remaining)+' 名敌人':(adv.canExit?(index===total-1?'恶龙已倒下 · 前往右端囚笼按 F 救援':'誓约已完成 · 前往光门按 F'):'沿誓灯前进 · 留意前方战区');
-    if(state.won)$('quest-progress').textContent='蔡乙先王子已获救';
-    $('adventure-objective').textContent=adv.objective||level.goal||'清空战区，收集碎片，点亮誓灯。';
-    $('encounter-progress').textContent='战区 '+countText(encounters,'cleared',level.encounters?.length||3);
-    $('relic-progress').textContent='碎片 '+countText(adv.relics,'collected',level.relics?.length||3);
-    $('beacon-progress').textContent='誓灯 '+countText(adv.beacons,'lit',level.beacons?.length||3);
-    $('chest-progress').textContent='宝箱 '+countText(adv.chests,'opened',level.chests?.length||0);
-    const checkpoint=adv.checkpoint,checkpointIndex=(level.checkpoints||[]).findIndex(c=>c.id===checkpoint?.id);
-    $('checkpoint-status').textContent=checkpoint?.id?'检查点 '+(checkpointIndex>=0?checkpointIndex+1:'')+' 已记录':'检查点 · 尚未记录';
-    $('checkpoint-status').classList.toggle('recorded',!!checkpoint?.id);
-    for(const [id,item,key] of [['relic-progress',adv.relics,'collected'],['beacon-progress',adv.beacons,'lit'],['encounter-progress',encounters,'cleared']]){
+    setText('quest-progress',state.won?'蔡乙先王子已获救':active?active.label+' · 剩余 '+Math.max(0,active.remaining??remaining)+' 名敌人':adv.canExit?(index===total-1?'恶龙已倒下 · 前往右端囚笼按 F 救援':'战区已突破 · 前往出口'):'留意本章机关 · 突破前方战区');
+    const mechanic=level.mechanicHint||level.featureHint||'观察敌人的出招预警，用格挡、跳跃和投球应对。';
+    setText('stage-mechanic',mechanic);setText('battle-mechanic',mechanic);
+    setText('adventure-objective',adv.objective||level.goal||'突破战区，留意本章机关。');
+    setText('encounter-progress','战区 '+countText(encounters,'cleared',level.encounters?.length||3));
+    setText('relic-progress','奖励碎片 '+countText(adv.relics,'collected',level.relics?.length||3));
+    setText('beacon-progress','路灯 '+countText(adv.beacons,'lit',level.beacons?.length||3));
+    setText('chest-progress','宝箱 '+countText(adv.chests,'opened',level.chests?.length||0));
+    setText('checkpoint-status','战区自动保存');
+    for(const [id,item] of [['relic-progress',adv.relics],['beacon-progress',adv.beacons],['encounter-progress',encounters]]){
+      const key=id==='relic-progress'?'collected':id==='beacon-progress'?'lit':'cleared';
       $(id).classList.toggle('complete',!!item?.total&&Number(item[key])>=Number(item.total));
     }
     const energy=Math.min(100,Math.max(0,state.comboEnergy||0));
-    $('combo-fill').style.width=energy+'%';$('combo-icon').classList.toggle('ready',energy>=100);
-    $('combo-label').textContent=energy>=100?'誓约合击已就绪':'誓约合击';
-    $('combo-hint').textContent=energy>=100?'按 E · 与公主并肩出击':'攻击蓄能 '+Math.floor(energy)+'%';
+    setFill('combo-fill',energy);$('combo-icon').classList.toggle('ready',energy>=100);
+    setText('combo-label',energy>=100?'剑气爆发已就绪':'剑气爆发');
+    setText('combo-hint',energy>=100?'按 E · 释放蓄积剑气':'攻击蓄能 '+Math.floor(energy)+'%');
+    const combat=state.combat||{},step=Math.max(0,Math.min(4,Number(combat.step)||0));
+    setText('combat-state',combat.label||'待机');
+    document.querySelectorAll('[data-combo-step]').forEach(node=>node.classList.toggle('active',Number(node.dataset.comboStep)===step));
+    const stamina=Math.max(0,Number(combat.guardStamina??100)),guardMax=Math.max(1,Number(combat.guardMax)||100);
+    setFill('guard-fill',stamina/guardMax*100);setText('guard-state',combat.guarding?'横剑格挡':stamina<guardMax*.18?'耐力不足 · 松开恢复':'按住 L / 鼠标右键');
+    $('guard-meter').setAttribute('aria-valuenow',String(Math.round(stamina/guardMax*100)));
+    $('guard-meter').classList.toggle('guarding',!!combat.guarding);$('guard-meter').classList.toggle('low',stamina<guardMax*.18);
+    const ranged=state.ranged||{},canThrow=ranged.canThrow===true,rangedCooldown=Math.max(0,Number(ranged.cooldown)||0),rangedMax=Math.max(.01,Number(ranged.cooldownMax)||.12);
+    const ballState=ranged.state||'ready',ballLabels={ready:'可以投掷',windup:'准备出手',outbound:'篮球飞行中',returning:'正在回收',cooldown:'接球准备'};
+    setText('ranged-state',ranged.label||ballLabels[ballState]||'准备中');
+    setText('ranged-hint',ballState==='cooldown'?'接球准备 · 即刻再战':ballState==='outbound'||ballState==='returning'?'快速回收中 · 可继续挥剑或防御':ballState==='windup'?'快速出手':'Q / 鼠标左键 · 快速投掷');
+    const ballProgress=ballState==='cooldown'?(1-rangedCooldown/rangedMax)*100:ballState==='ready'?100:0;
+    setFill('ranged-fill',ballProgress);$('ranged-meter').setAttribute('aria-valuenow',String(Math.round(Math.max(0,Math.min(100,ballProgress)))));
+    $('ranged-meter').classList.toggle('ready',canThrow);$('ranged-meter').classList.toggle('in-flight',ballState==='outbound'||ballState==='returning');
+    setText('throw-button',canThrow?'投球 Q':ballState==='ready'?(state.paused?'已暂停':'准备中'):ballState==='cooldown'?rangedCooldown.toFixed(1)+'s':ballState==='windup'?'出手中':'等待回收');$('throw-button').disabled=!canThrow;
+    document.querySelectorAll('[data-input="throw"]').forEach(node=>{node.disabled=!canThrow;const text=canThrow||ballState==='ready'?'篮球':ballState==='cooldown'?rangedCooldown.toFixed(1)+'s':ballState==='windup'?'出手':'回收中';if(node.textContent!==text)node.textContent=text;});
+    const mount=state.mount||{},mounted=!!mount.mounted,summoned=!!mount.summoned,cooldown=Math.max(0,Number(mount.cooldown)||0),mountTransition=mount.state==='summoning'||mount.state==='dismissing';
+    setText('mount-state',mount.label||(mounted?'骑乘中':summoned?'已召唤':'尚未召唤'));
+    setText('mount-hint',mounted?'G 下骑 · 落地后可收回':mount.canRide?'G 上骑 · 王果冻就在身边':cooldown>0?'再次召唤还需 '+cooldown.toFixed(1)+' 秒':summoned?'靠近王果冻，落地后按 G':'R 召唤，再靠近按 G 骑乘');
+    setText('summon-button',mounted?'先下骑':mount.state==='summoning'?'召唤中':mount.state==='dismissing'?'收回中':summoned?'收回 R':cooldown>0?'冷却 '+Math.ceil(cooldown)+'s':'召唤 R');
+    $('summon-button').disabled=mounted||mountTransition||cooldown>0;
+    setText('ride-button',mounted?'下骑 G':'上骑 G');$('ride-button').disabled=!mounted&&!mount.canRide;
+    document.querySelectorAll('[data-input="ride"]').forEach(node=>{node.disabled=!mounted&&!mount.canRide;node.textContent=mounted?'下骑':'上骑';});
+    document.querySelectorAll('[data-input="summon"]').forEach(node=>{node.disabled=mounted||mountTransition||cooldown>0;node.textContent=mount.state==='summoning'?'出现中':mount.state==='dismissing'?'收回中':summoned?'收回':'召唤';});
+    document.body.classList.toggle('mounted',mounted);
     $('boss-hud').hidden=!state.boss;
-    if(state.boss){
-      $('boss-name').textContent=state.boss.name||'精英守卫';
-      $('boss-kind').textContent=index===total-1?'最终之战':'精英对决';
-      $('boss-fill').style.width=Math.max(0,Math.min(100,state.boss.hp/Math.max(1,state.boss.maxHp)*100))+'%';
-    }
+    if(state.boss){setText('boss-name',state.boss.name||'精英守卫');setText('boss-kind',index===total-1?'最终之战':'精英对决');setFill('boss-fill',state.boss.hp/Math.max(1,state.boss.maxHp)*100);}
   }
   function displayGame(){menu.hidden=true;play.hidden=false;document.body.dataset.screen='play';}
   function displayMenu(){
@@ -90,7 +113,7 @@
   function closePanel(){panel=null;overlay.hidden=true;game?.resume();$('game-canvas').focus({preventScroll:true});}
   function stageIntro(index){
     const level=levels[index]||{};
-    openPanel('intro','<p class="dialog-eyebrow">'+chapter(index)+' · '+esc(level.region||'荒原誓约')+'</p><div class="dialog-symbol">✦</div><h2>'+esc(level.name||'新的旅程')+'</h2><p class="dialog-description">'+esc(level.description||'与王德敏公主一起向前。')+'</p>'+dialogue(level.intro)+'<div class="chapter-goal">'+esc(level.goal||'收集碎片，点亮誓灯。')+'</div><p class="intro-hint">碎片自动拾取 · 誓灯、宝箱与检查点靠近按 F</p><div class="dialog-actions"><button class="button primary" data-action="resume">'+(index===0?'握紧长剑，出发':'继续向前')+' →</button></div>');
+    openPanel('intro','<p class="dialog-eyebrow">'+chapter(index)+' · '+esc(level.region||'荒原誓约')+'</p><div class="dialog-symbol">✦</div><h2>'+esc(level.name||'新的旅程')+'</h2><p class="dialog-description">'+esc(level.description||'握紧长剑，沿誓灯向前。')+'</p>'+dialogue(level.intro)+'<div class="chapter-goal">'+esc(level.mechanicHint||level.featureHint||level.goal||'突破战区，留意机关。')+'</div><p class="intro-hint">J 连击 / 空中斩 · 空中 S + J 下劈 · Q / 左键快速投球<br>短按跳低跃，长按高跃 · 路灯自动点亮，战区自动存档</p><div class="dialog-actions"><button class="button primary" data-action="resume">'+(index===0?'握紧长剑，出发':'继续向前')+' →</button></div>');
   }
   function equipmentCards(){
     return Object.entries(content.upgrades||{}).map(([key,def])=>{
@@ -104,27 +127,28 @@
   }
   function pausePanel(){
     if(panel)return;
-    openPanel('pause','<p class="dialog-eyebrow">冒险暂停 · '+chapter(state.stageIndex||0)+'</p><div class="dialog-symbol">Ⅱ</div><h2>骑士也需要歇一会儿。</h2><p class="dialog-description">王德敏公主在原地等你。<br>旗帜旁按 F 记录检查点，第一次激活还能恢复生命。</p>'+heroPickerHtml()+'<div class="dialog-actions"><button class="button primary" data-action="resume">继续冒险</button><button class="button" data-action="route">战役地图</button><button class="button" data-action="help">操作说明</button><button class="button subtle" data-action="home">保存并回首页</button></div>');
+    openPanel('pause','<p class="dialog-eyebrow">冒险暂停 · '+chapter(state.stageIndex||0)+'</p><div class="dialog-symbol">Ⅱ</div><h2>骑士也需要歇一会儿。</h2><p class="dialog-description">战斗、坐骑与机关均已暂停。<br>战区突破后自动保存，路灯经过时自动点亮。</p>'+heroPickerHtml()+'<div class="dialog-actions"><button class="button primary" data-action="resume">继续冒险</button><button class="button" data-action="route">战役地图</button><button class="button" data-action="help">操作说明</button><button class="button subtle" data-action="home">保存并回首页</button></div>');
   }
   function death(){
-    const point=state.adventure?.checkpoint?.id?'最近检查点':'本章起点';
-    openPanel('death','<p class="dialog-eyebrow">这一次，先休息一下</p><div class="dialog-symbol">❧</div><h2>勇气不会因为跌倒而消失。</h2><p class="dialog-description">王德敏：「再来一次，我一直在你身边。」<br>保留成长与装备，从'+point+'重新挑战。</p><div class="dialog-actions"><button class="button primary" data-action="retry">再战一次 →</button><button class="button subtle" data-action="home">保存并回首页</button></div>');
+    const point=state.adventure?.checkpoint?.id?'最近完成的战区':'本章起点';
+    openPanel('death','<p class="dialog-eyebrow">这一次，先休息一下</p><div class="dialog-symbol">❧</div><h2>勇气不会因为跌倒而消失。</h2><p class="dialog-description">休整一下，重新握紧长剑。<br>保留成长与装备，从'+point+'重新挑战。</p><div class="dialog-actions"><button class="button primary" data-action="retry">再战一次 →</button><button class="button subtle" data-action="home">保存并回首页</button></div>');
   }
   function victory(){
-    openPanel('victory','<p class="dialog-eyebrow">荒原誓约 · 旅程完成</p><div class="ending-medal">♛</div><h2>恶龙倒下，誓约兑现。</h2><p class="ending-names">王果冻骑士 × 王德敏公主 · 蔡乙先王子已获救</p>'+dialogue(content.ending)+'<div class="stats-row"><span><strong>'+total+'</strong>章节完成</span><span><strong>Lv.'+(state.level||1)+'</strong>骑士等级</span><span><strong>'+Object.values(state.upgrades||{}).reduce((a,b)=>a+Number(b),0)+'</strong>装备强化</span></div><div class="dialog-actions"><button class="button primary" data-action="home">带着故事回家</button><button class="button" data-action="new">再来一次冒险</button></div>',true);
+    openPanel('victory','<p class="dialog-eyebrow">召唤之约 · 旅程完成</p><div class="ending-medal">♛</div><h2>恶龙倒下，誓约兑现。</h2><p class="ending-names">银发小鸡骑士与王果冻 · 蔡乙先王子已获救</p>'+dialogue(content.ending)+'<div class="stats-row"><span><strong>'+total+'</strong>章节完成</span><span><strong>Lv.'+(state.level||1)+'</strong>骑士等级</span><span><strong>'+Object.values(state.upgrades||{}).reduce((a,b)=>a+Number(b),0)+'</strong>装备强化</span></div><div class="dialog-actions"><button class="button primary" data-action="home">带着故事回家</button><button class="button" data-action="new">再来一次冒险</button></div>',true);
   }
   function helpHtml(){
     const controls=(content.controls||[]).map(c=>'<div><kbd>'+esc(c.key)+'</kbd><span>'+esc(c.label)+'</span></div>').join('');
-    return '<p class="dialog-eyebrow">骑士手册</p><h2>挥剑，探路，并肩向前。</h2><div class="help-grid">'+controls+'<div><kbd>触屏</kbd><span>使用画面下方按钮</span></div></div><p class="help-note">每章三处战区，清空敌人后才能继续。主路上的 <strong>3 枚誓约碎片</strong>会自动拾取，<strong>3 盏誓灯</strong>需要按 F 点亮；两项齐全后再到光门按 F。最后一章击败恶龙后，还需到右端王子囚笼前按 F 完成救援。宝箱在支路高台上，属于额外奖励。</p><p class="help-note">检查点旗帜旁按 F 记录，首次激活可恢复生命。公主会主动跟随和施法；能量 100 时按 E 合击。连按或按住 J 连击，跳跃中也能挥剑；用 K 冲刺躲过敌人的预警攻击。</p><p class="help-note">旧版已通关存档会带着原有成长，从扩展战役第 5 章继续。</p><div class="dialog-actions"><button class="button primary" data-action="close-help">我准备好了</button></div>';
+    return '<p class="dialog-eyebrow">骑士手册</p><h2>看准时机，打出自己的节奏。</h2><div class="help-grid">'+controls+'<div><kbd>空中 J</kbd><span>腾空斩击</span></div><div><kbd>空中 S + J</kbd><span>向下重劈</span></div><div><kbd>触屏</kbd><span>使用画面下方按钮</span></div></div><p class="help-note"><strong>关卡目标</strong>：突破战区，穿过出口。每章有不同路线、机关和敌人组合，地图会显示本章玩法。路灯经过时自动点亮，碎片和宝箱是额外奖励，战区突破后自动记录进度。最后一章击败恶龙，再到右端囚笼按 F 救出蔡乙先王子。</p><p class="help-note"><strong>J 三轻一重</strong>，空中按 J 腾空斩击，空中按住 S 再按 J 向下重劈。短按跳跃低跃，长按高跃，空中可二段跳。<strong>按住 L 或鼠标右键格挡</strong>，看准命中时机招架反击；K 冲刺，能量满时 E 释放剑气。</p><p class="help-note"><strong>Q / 战场鼠标左键快速投篮球</strong>：取球后迅速出手，篮球命中或达到射程后自动快速回收，接回只需短暂准备即可再投。出手后可用 J 或 L 接上近战与防御，飞行期间保持单球。步行与骑乘均能使用。</p><p class="help-note"><strong>R 召唤王果冻，靠近并落地按 G 上骑</strong>；骑乘后按 G 下骑，再按 R 收回。空中不能上下骑。生命条在战场左下方显示实际生命，受伤会扣血；生命归零后可以保留成长与装备再战。</p><div class="dialog-actions"><button class="button primary" data-action="close-help">回到战场</button></div>';
+
   }
   function routeCards(inGame){
     return levels.map((l,i)=>{
       const current=inGame&&i===(state.stageIndex||0),done=inGame&&(state.won||i<(state.stageIndex||0));
-      return '<div class="route-step '+(current?'current':done?'done':'')+'"><span>'+String(i+1).padStart(2,'0')+'</span><p>'+esc(l.name)+'<small>'+esc(l.region||'')+'</small></p>'+(current?'<b>当前</b>':done?'<b>✓</b>':'')+'</div>';
+      return '<div class="route-step '+(current?'current':done?'done':'')+'"><span>'+String(i+1).padStart(2,'0')+'</span><p>'+esc(l.name)+'<small>'+esc(l.mechanicHint||l.featureHint||l.region||'')+'</small></p>'+(current?'<b>当前</b>':done?'<b>✓</b>':'')+'</div>';
     }).join('');
   }
   function routeHtml(){
-    return '<p class="dialog-eyebrow">荒原誓约 · 战役地图</p><h2>'+total+' 章旅途，一起走到底。</h2><p class="dialog-description">每章三处战区 · 主路寻碎片与誓灯 · 高台寻宝<br>地图记录旅途顺序，继续冒险会回到当前关卡。</p><div class="route-grid">'+routeCards(!play.hidden)+'</div><div class="dialog-actions"><button class="button primary" data-action="close-aux">回到旅途</button></div>';
+    return '<p class="dialog-eyebrow">召唤之约 · 战役地图</p><h2>'+total+' 章旅途，把王子接回家。</h2><p class="dialog-description">不同路线、机关与敌人组合 · 战区自动保存<br>碎片与宝箱提供额外奖励，路灯经过时自动点亮。</p><div class="route-grid">'+routeCards(!play.hidden)+'</div><div class="dialog-actions"><button class="button primary" data-action="close-aux">回到旅途</button></div>';
   }
   function openAux(kind,html,wide){
     if(play.hidden){
@@ -158,9 +182,9 @@
   game=new window.KnightGame($('game-canvas'),{onState:updateState,onEvent});window.knightGame=game;
   game.setHero(preferredHero);renderHero(preferredHero,true);
   document.addEventListener('click',event=>{
-    const button=event.target.closest('[data-action]');if(!button)return;
+    const button=event.target.closest('[data-action]');if(!button||button.disabled)return;
     event.preventDefault();const action=button.dataset.action;
-    if(action==='select-hero')selectHero(button.dataset.hero);
+    if(action==='summon'||action==='ride'||action==='throw'){pulseInput(action);return;}
     if(action==='new'){
       if(game.hasSave()&&panel!=='victory'){
         if(play.hidden)displayGame();
@@ -195,7 +219,7 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&!play.hidden&&!panel)pausePanel();});
   for(const button of document.querySelectorAll('[data-input]')){
     const release=()=>{button.classList.remove('pressed');game.setInput(button.dataset.input,false);};
-    button.addEventListener('pointerdown',event=>{event.preventDefault();if(panel)return;button.setPointerCapture(event.pointerId);button.classList.add('pressed');game.setInput(button.dataset.input,true);});
+    button.addEventListener('pointerdown',event=>{event.preventDefault();if(panel||button.disabled)return;button.setPointerCapture(event.pointerId);button.classList.add('pressed');game.setInput(button.dataset.input,true);if(['summon','ride','throw','dash','combo','interact'].includes(button.dataset.input))setTimeout(release,60);});
     button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);
   }
   window.addEventListener('blur',()=>{for(const b of document.querySelectorAll('[data-input]')){b.classList.remove('pressed');game.setInput(b.dataset.input,false);}if(!play.hidden&&!panel)pausePanel();});
