@@ -28,12 +28,12 @@
 - [x] 近战范围校准，现有篮球/格挡/坐骑回归。
 - [x] 实际Chrome截图与性能样本，稳定后Git提交。
 
-## 阶段B（本地验收已通过，待最终提交与发布）
+## 阶段B（已交付，2026-11-14）
 
 - [x] 单一猎狼的精修试玩入口（复用首图与主角），不写入/覆盖正常战役存档。
 - [x] 带验收标准的操作引导与重试/退出流程；首图可独立完成。
-- [ ] portable Node检查入口已通过104/104；待随最终提交将所需测试纳入版本管理。
-- [ ] 稳定Git提交、更新本地交付和原在线游戏，集中发布一次。
+- [x] portable Node检查入口与所需测试已纳入版本管理；npm run check通过，npm test 120/120。
+- [x] 阶段B本地Git提交f46adcb、GitHub同步、本地成品和线上第10版均已完成。
 
 ### 阶段B实现与操作
 
@@ -43,7 +43,7 @@
 - 模块仅在 `_loadStage` 调用期间临时替换 `levels[0]`，结束立即恢复原12关数组；`startNew/continueGame` 清除试玩状态，试玩的保存调用不会写战役存档。菜单、目标、帮助、暂停和死亡提示明确本次为试玩。
 - 新增无依赖 `tools/showcase-check.cjs`，输出 `{passed,failed,checks}` JSON；报告目录使用 `KNIGHT_QA_DIR`，默认 `.qa-local`。可执行 `node tools/showcase-check.cjs`，也已由 `npm test` 自动发现。
 - 本轮8/8规则通过：普通输入13.52秒完成两处战区与出口F，零死亡，无血量/伤害注入；试玩开始、战区奖励、路灯、死亡、重试、重复退出、退出后继续均不改原战役存档的385字节内容。`solo-ui-check.cjs` 也通过。
-- 报告保存在 `制作资料/过程记录/精修试玩_2026-11-13/showcase-qa.json`。旧 `basketball-ui-check.cjs` 仍有固定缓存标签 `flow-campaign-20261112` 的过时断言，阶段A标签已更新，因此该检查会失败；未为消除报错回滚缓存版本或伪造标签。
+- 报告保存在 `制作资料/过程记录/精修试玩_2026-11-13/showcase-qa.json`。本地旧basketball-ui缓存断言已改为检查有效版本参数，UI状态/血量等检查再次通过；没有回滚缓存或伪造旧标签。
 
 ### 阶段B实际Chrome验收
 
@@ -53,7 +53,7 @@
 - 最终5.01秒实测约90.01FPS、绘制耗时P95 **0.50ms**，样本452帧；此为本机独立Chrome样本，不承诺所有设备帧率。
 - 核验范围写入脚本/报告：命中截图使用原有84HP猎狼，只调整站位并延后其AI，以实际J键捕获精确瞬间；死亡面板由真实狼AI与固定步进加速触发；完整通关在真实浏览器RAF中执行。没有把桩绘图当成实际视觉验收。
 
-阶段B本地代码和浏览器验收完成；最终Git提交、本地交付与线上集中发布仍由主任务统一处理。浏览器脚本当前受 `/tools/*` 忽略规则影响，需在最终提交时增加例外或显式加入该文件。
+阶段B本地与浏览器验收、Git提交、GitHub及成品同步均完成。tools/quality-browser.mjs已加入版本管理。
 
 ## 测试状态
 
@@ -63,13 +63,23 @@
 
 1. 先读本文件，执行git status --short和git log -3 --oneline，保留用户未提交内容。
 2. 阶段A当前根负责game.js/enemy-variety.js；景物子任务仅新增dist/wasteland-scenery.js；规则子任务仅tools新检查。若这些文件已落盘先复核，不重做。
-3. Chrome在沙箱内曾因crashpad不能启动；必要时按授权使用独立配置目录的本机浏览器，不接管用户浏览器。截图与记录保存在项目制作资料/过程记录/精修试玩_2026-11-13。
+3. 本轮代码/测试/试玩交付完成，先运行npm run check与npm test；只处理用户新增反馈或真实回归，不重复从头分析。Chrome在沙箱内曾因crashpad不能启动；必要时按授权使用独立配置目录的本机浏览器，不接管用户浏览器。截图与记录保存在项目制作资料/过程记录/精修试玩_2026-11-13。
 4. 仅在功能检查+视觉验收后勾选完成项，记录真实提交与剩余项。
 
 ## 云端与GitHub
 
-已找到GitHub仓库user-cyx-66/wangguodong-match-pet，现有骑士目录games/knight-adventure；当前Sites源码没有持久origin，已绑定原站点project_id。阶段A已上传main，GitHub提交f2f183cc2a32768f4a7f7e475e509c30eac77d08；阶段B正在同步。没有启动云端任务或恢复调度器，不能宣称关机后或额度恢复后会自动续跑。
+已找到GitHub仓库user-cyx-66/wangguodong-match-pet，现有骑士目录games/knight-adventure；当前Sites源码没有持久origin，已绑定原站点project_id。阶段A已上传main，GitHub提交f2f183cc2a32768f4a7f7e475e509c30eac77d08；阶段B已同步为GitHub提交d61bba10c3a690984cbdd728793b57e0dfbab38a，Actions运行43541973256成功。没有启动云端任务或恢复调度器，不能宣称关机后或额度恢复后会自动续跑。
 
 ## GitHub检查修复（2026-11-14）
 
 阶段A推送触发的旧CI失败：远程package仍运行旧tests，要求手动检查点/三碎片三灯。根因是同步遗漏测试入口，不是Ubuntu提示。阶段B将package检查/测试一并同步，保留现行自动保存/可选奖励/剧情/篮球/试玩等120项断言；没有删除检查job或降低伤害。GitHub Actions检查通过后，才能把远程状态视为已验收。
+
+## 本轮交付与停止点
+
+- 线上第10版已成功：https://wangguodong-knight-oath-20261021.caiyixian6.chatgpt.site ，运行源码提交f46adcbfee38e72c36ab19af5a20f0a3571a6a4e。
+- 本地推荐入口在所属项目 游戏成品/银发小鸡骑士_召唤之约/index.html，整个运行包和ZIP已核对与dist一致。
+- GitHub目录games/knight-adventure；当前代码提交d61bba10c3a690984cbdd728793b57e0dfbab38a，实际CI成功：https://github.com/user-cyx-66/wangguodong-match-pet/actions/runs/43541973256 。本文件后续文档收尾提交不改变运行代码。
+- npm run check检查9个运行脚本和HTML资源引用；npm test六组共120/120。真实Chrome19/19；规则不替代视觉，视觉检查不等于所有设备性能保证。
+- 本轮按用户收敛要求，完成一图/一主角/一种敌人的可交付精修试玩。原12关功能保留，但没有声称其余11关也逐关完成了同等技术美术精修。后续按实际试玩反馈选择一个可验证问题继续，避免无意义扩功能。
+- 本轮没有创建Codex Cloud开发任务，也没有配置额度恢复检测/自动重启/24小时调度。已上传代码、可运行检查和CLOUD_HANDOFF.md，不能把这些文件写成已在云端持续开发。
+- 准确恢复：先读本文件→git status与git log→npm run check→npm test→读取新增反馈；若没有新问题且120项与入口都正常，本轮无需再次开发或重复发布。
