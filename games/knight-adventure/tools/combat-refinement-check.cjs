@@ -8,14 +8,15 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const assert=require('node:assert/strict'),crypto=require('node:crypto');
 const dist=path.resolve(__dirname,'../dist');
-const record=path.resolve(__dirname,'../../../制作资料/过程记录/精修试玩_2026-11-13');
+const baselineRecord=path.resolve(__dirname,'../../../制作资料/过程记录/精修试玩_2026-11-13');
+const record=path.resolve(process.env.KNIGHT_QA_DIR||path.join(__dirname,'..','.qa-local'));
 const baseline=process.argv.includes('--baseline');
 const label=process.argv.find(v=>v.startsWith('--label='))?.slice(8)||(baseline?'baseline':'current');
 assert.match(label,/^[a-zA-Z0-9_-]+$/,'Report label must be a simple filename');
 const DT=1/120,checks=[],games=[];
 const sourceHashes={};
 function source(file){
-  const archived=path.join(record,'基线源码',file);
+  const archived=path.join(baselineRecord,'基线源码',file);
   const filePath=baseline&&fs.existsSync(archived)?archived:path.join(dist,file);
   const content=fs.readFileSync(filePath,'utf8');
   sourceHashes[file]={path:filePath,sha256:crypto.createHash('sha256').update(content).digest('hex')};

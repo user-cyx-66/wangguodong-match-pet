@@ -29,11 +29,12 @@
     renderedHero=id;const hero=heroes[id];document.body.dataset.hero=id;
     setText('player-name',hero.name);$('player-avatar').dataset.hero=id;
     $('player-portrait').src=hero.portrait;$('player-portrait').alt=hero.name;$('hero-cover').src=hero.cover;
-    setText('hero-edition','单人战役 · 召唤之约');
+    setText('hero-edition',game?.showcase?'精修试玩 · 猎狼试炼':'单人战役 · 召唤之约');
   }
   function updateState(s){
     state=s||{};renderHero('ikun');
-    const hp=Math.max(0,state.hp||0),max=Math.max(1,state.maxHp||100),index=Number(state.stageIndex)||0,level=levels[index]||{};
+    const hp=Math.max(0,state.hp||0),max=Math.max(1,state.maxHp||100),index=Number(state.stageIndex)||0,trial=!!state.showcase,level=(trial?game?.stage:levels[index])||{};
+    setText('hero-edition',trial?'精修试玩 · 猎狼试炼':'单人战役 · 召唤之约');
     const healthRatio=hp/max,healthText=Math.ceil(hp)+' / '+max;
     setFill('health-fill',healthRatio*100);setText('health-text',healthText);
     setFill('battle-health-fill',healthRatio*100);setText('battle-health-text',healthText);
@@ -48,18 +49,21 @@
     previousHp=hp;previousStage=index;
     setFill('xp-fill',(state.xp||0)/Math.max(1,state.xpToNext||100)*100);
     setText('player-level','Lv.'+(state.level||1));setText('gold',Math.floor(state.gold||0));
-    setText('stage-number',chapter(index));setText('stage-name',state.stageName||level.name||'风雨荒原');
+    setText('stage-number',trial?'精修试玩':chapter(index));setText('stage-name',state.stageName||level.name||'风雨荒原');
     const adv=state.adventure||{},active=adv.activeEncounter,encounters=adv.encounters||{};
     const remaining=state.enemiesRemaining??Math.max(0,(state.stageTotal||0)-(state.stageKills||0));
-    setText('quest-progress',state.won?'蔡乙先王子已获救':active?active.label+' · 剩余 '+Math.max(0,active.remaining??remaining)+' 名敌人':adv.canExit?(index===total-1?'恶龙已倒下 · 前往右端囚笼按 F 救援':'战区已突破 · 前往出口'):'留意本章机关 · 突破前方战区');
+    setText('quest-progress',trial?(active?active.label+' · 剩余 '+Math.max(0,active.remaining??remaining)+' 只猎狼':adv.canExit?'两处战区已突破 · 到右侧出口按 F':'沿灯火前进 · 击败三只猎狼'):state.won?'蔡乙先王子已获救':active?active.label+' · 剩余 '+Math.max(0,active.remaining??remaining)+' 名敌人':adv.canExit?(index===total-1?'恶龙已倒下 · 前往右端囚笼按 F 救援':'战区已突破 · 前往出口'):'留意本章机关 · 突破前方战区');
     const mechanic=level.mechanicHint||level.featureHint||'观察敌人的出招预警，用格挡、跳跃和投球应对。';
     setText('stage-mechanic',mechanic);setText('battle-mechanic',mechanic);
-    setText('adventure-objective',adv.objective||level.goal||'突破战区，留意本章机关。');
+    setText('adventure-objective',trial?level.goal:adv.objective||level.goal||'突破战区，留意本章机关。');
     setText('encounter-progress','战区 '+countText(encounters,'cleared',level.encounters?.length||3));
     setText('relic-progress','奖励碎片 '+countText(adv.relics,'collected',level.relics?.length||3));
     setText('beacon-progress','路灯 '+countText(adv.beacons,'lit',level.beacons?.length||3));
     setText('chest-progress','宝箱 '+countText(adv.chests,'opened',level.chests?.length||0));
-    setText('checkpoint-status','战区自动保存');
+    setText('checkpoint-status',trial?'试玩不影响战役存档':'战区自动保存');
+    $('checkpoint-status').setAttribute('title',trial?'战役存档保留，重新挑战从试玩起点开始':'突破战区后自动记录进度');
+    setText('save-status',trial?'精修试玩 · 不影响战役存档':'自动存档');
+    $('relic-progress').hidden=trial;$('chest-progress').hidden=trial;
     for(const [id,item] of [['relic-progress',adv.relics],['beacon-progress',adv.beacons],['encounter-progress',encounters]]){
       const key=id==='relic-progress'?'collected':id==='beacon-progress'?'lit':'cleared';
       $(id).classList.toggle('complete',!!item?.total&&Number(item[key])>=Number(item.total));
@@ -101,9 +105,10 @@
     game?.exitToMenu();panel=null;panelStack=[];menuAux=null;$('page-aux')?.remove();
     overlay.hidden=true;play.hidden=true;menu.hidden=false;document.body.dataset.screen='menu';
     const saved=game?.hasSave();$('continue-button').hidden=!saved;
-    $('start-button').className=saved?'button subtle':'button primary large';
-    $('start-button').textContent=saved?'重新启程':'启程冒险 →';
-    $('save-note').textContent=saved?'旅程已保存 · 继续上次的冒险':'进度自动保存在当前浏览器 · 支持键盘与触屏';
+    $('start-button').className='button subtle';
+    $('start-button').textContent=saved?'重开十二章战役':'开始十二章战役';
+    $('save-note').textContent=saved?'战役存档已保留 · 精修试玩不会覆盖旅程':'精修试玩不影响战役存档 · 支持键盘与触屏';
+    setText('hero-edition','精修试玩 · 完整战役');
   }
   function openPanel(kind,html,wide=false){
     panel=kind;game?.pause();overlay.hidden=false;dialog.className='dialog-panel'+(wide?' wide':'');dialog.innerHTML=html;
@@ -112,8 +117,9 @@
   }
   function closePanel(){panel=null;overlay.hidden=true;game?.resume();$('game-canvas').focus({preventScroll:true});}
   function stageIntro(index){
-    const level=levels[index]||{};
-    openPanel('intro','<p class="dialog-eyebrow">'+chapter(index)+' · '+esc(level.region||'荒原誓约')+'</p><div class="dialog-symbol">✦</div><h2>'+esc(level.name||'新的旅程')+'</h2><p class="dialog-description">'+esc(level.description||'握紧长剑，沿誓灯向前。')+'</p>'+dialogue(level.intro)+'<div class="chapter-goal">'+esc(level.mechanicHint||level.featureHint||level.goal||'突破战区，留意机关。')+'</div><p class="intro-hint">J 连击 / 空中斩 · 空中 S + J 下劈 · Q / 左键快速投球<br>短按跳低跃，长按高跃 · 路灯自动点亮，战区自动存档</p><div class="dialog-actions"><button class="button primary" data-action="resume">'+(index===0?'握紧长剑，出发':'继续向前')+' →</button></div>');
+    const trial=!!game?.showcase,level=(trial?game.stage:levels[index])||{};
+    const hint=trial?'按住 J 完成三轻一重，重击可打断冲锋；L 正面格挡<br>两处战区清理后，到右侧出口按 F · 试玩不影响战役存档':'J 连击 / 空中斩 · 空中 S + J 下劈 · Q / 左键快速投球<br>短按跳低跃，长按高跃 · 路灯自动点亮，战区自动存档';
+    openPanel('intro','<p class="dialog-eyebrow">'+(trial?'精修试玩':chapter(index))+' · '+esc(level.region||'荒原誓约')+'</p><div class="dialog-symbol">✦</div><h2>'+esc(level.name||'新的旅程')+'</h2><p class="dialog-description">'+esc(level.description||'握紧长剑，沿誓灯向前。')+'</p>'+dialogue(level.intro)+'<div class="chapter-goal">'+esc(level.mechanicHint||level.featureHint||level.goal||'突破战区，留意机关。')+'</div><p class="intro-hint">'+hint+'</p><div class="dialog-actions"><button class="button primary" data-action="resume">'+(trial?'开始试炼':index===0?'握紧长剑，出发':'继续向前')+' →</button></div>');
   }
   function equipmentCards(){
     return Object.entries(content.upgrades||{}).map(([key,def])=>{
@@ -127,17 +133,26 @@
   }
   function pausePanel(){
     if(panel)return;
-    openPanel('pause','<p class="dialog-eyebrow">冒险暂停 · '+chapter(state.stageIndex||0)+'</p><div class="dialog-symbol">Ⅱ</div><h2>骑士也需要歇一会儿。</h2><p class="dialog-description">战斗、坐骑与机关均已暂停。<br>战区突破后自动保存，路灯经过时自动点亮。</p>'+heroPickerHtml()+'<div class="dialog-actions"><button class="button primary" data-action="resume">继续冒险</button><button class="button" data-action="route">战役地图</button><button class="button" data-action="help">操作说明</button><button class="button subtle" data-action="home">保存并回首页</button></div>');
+    const trial=!!game?.showcase;
+    openPanel('pause','<p class="dialog-eyebrow">'+(trial?'精修试玩':chapter(state.stageIndex||0))+' · 已暂停</p><div class="dialog-symbol">Ⅱ</div><h2>骑士也需要歇一会儿。</h2><p class="dialog-description">战斗、坐骑与机关均已暂停。<br>'+(trial?'试玩不影响战役存档；重新挑战会从第一处战区开始。':'战区突破后自动保存，路灯经过时自动点亮。')+'</p>'+heroPickerHtml()+'<div class="dialog-actions"><button class="button primary" data-action="resume">继续'+(trial?'试玩':'冒险')+'</button>'+(trial?'<button class="button" data-action="retry">重新挑战</button>':'<button class="button" data-action="route">战役地图</button>')+'<button class="button" data-action="help">操作说明</button><button class="button subtle" data-action="home">'+(trial?'退出试玩':'保存并回首页')+'</button></div>');
   }
   function death(){
+    if(game?.showcase){
+      openPanel('death','<p class="dialog-eyebrow">精修试玩 · 再试一次</p><div class="dialog-symbol">❧</div><h2>看清冲锋，再接上重击。</h2><p class="dialog-description">重新挑战三只猎狼，从第一处战区开始。<br>战役存档保留，可以随时回首页继续旅程。</p><div class="dialog-actions"><button class="button primary" data-action="retry">重新挑战 →</button><button class="button subtle" data-action="home">回到首页</button></div>');return;
+    }
     const point=state.adventure?.checkpoint?.id?'最近完成的战区':'本章起点';
     openPanel('death','<p class="dialog-eyebrow">这一次，先休息一下</p><div class="dialog-symbol">❧</div><h2>勇气不会因为跌倒而消失。</h2><p class="dialog-description">休整一下，重新握紧长剑。<br>保留成长与装备，从'+point+'重新挑战。</p><div class="dialog-actions"><button class="button primary" data-action="retry">再战一次 →</button><button class="button subtle" data-action="home">保存并回首页</button></div>');
+  }
+  function showcaseComplete(){
+    updateState(game.getState());
+    openPanel('showcase-complete','<p class="dialog-eyebrow">精修试玩 · 两处战区已突破</p><div class="ending-medal">✦</div><h2>猎狼退去，灯火还在。</h2><p class="dialog-description">三只猎狼已击败，荒原试炼完成。<br>再试一次，练习格挡与重击；也可回首页继续完整战役。</p><div class="dialog-actions"><button class="button primary" data-action="retry">再试一次 →</button><button class="button" data-action="home">回到首页</button></div>');
   }
   function victory(){
     openPanel('victory','<p class="dialog-eyebrow">召唤之约 · 旅程完成</p><div class="ending-medal">♛</div><h2>恶龙倒下，誓约兑现。</h2><p class="ending-names">银发小鸡骑士与王果冻 · 蔡乙先王子已获救</p>'+dialogue(content.ending)+'<div class="stats-row"><span><strong>'+total+'</strong>章节完成</span><span><strong>Lv.'+(state.level||1)+'</strong>骑士等级</span><span><strong>'+Object.values(state.upgrades||{}).reduce((a,b)=>a+Number(b),0)+'</strong>装备强化</span></div><div class="dialog-actions"><button class="button primary" data-action="home">带着故事回家</button><button class="button" data-action="new">再来一次冒险</button></div>',true);
   }
   function helpHtml(){
     const controls=(content.controls||[]).map(c=>'<div><kbd>'+esc(c.key)+'</kbd><span>'+esc(c.label)+'</span></div>').join('');
+    if(game?.showcase)return '<p class="dialog-eyebrow">精修试玩 · 操作说明</p><h2>看准冲锋，接上第四剑。</h2><div class="help-grid">'+controls+'</div><p class="help-note"><strong>本次目标</strong>：突破两处战区，击败三只猎狼，沿灯火走到右侧光门按 F 完成试玩。中间的跳台是可选路线，地面也能通过。</p><p class="help-note"><strong>按住 J 打出三轻一重</strong>，第四剑可中断猎狼冲锋。猎狼脚下亮起箭头时将锁定方向；按住 L 或鼠标右键正面格挡，也可跳跃或 K 闪避。</p><p class="help-note"><strong>Q / 左键投球，R 召唤王果冻，靠近按 G 骑乘</strong>，均沿用原有操作。试玩不影响战役存档；死亡或选择重新挑战，会从第一处战区再来。</p><div class="dialog-actions"><button class="button primary" data-action="close-help">回到试玩</button></div>';
     return '<p class="dialog-eyebrow">骑士手册</p><h2>看准时机，打出自己的节奏。</h2><div class="help-grid">'+controls+'<div><kbd>空中 J</kbd><span>腾空斩击</span></div><div><kbd>空中 S + J</kbd><span>向下重劈</span></div><div><kbd>触屏</kbd><span>使用画面下方按钮</span></div></div><p class="help-note"><strong>关卡目标</strong>：突破战区，穿过出口。每章有不同路线、机关和敌人组合，地图会显示本章玩法。路灯经过时自动点亮，碎片和宝箱是额外奖励，战区突破后自动记录进度。最后一章击败恶龙，再到右端囚笼按 F 救出蔡乙先王子。</p><p class="help-note"><strong>J 三轻一重</strong>，空中按 J 腾空斩击，空中按住 S 再按 J 向下重劈。短按跳跃低跃，长按高跃，空中可二段跳。<strong>按住 L 或鼠标右键格挡</strong>，看准命中时机招架反击；K 冲刺，能量满时 E 释放剑气。</p><p class="help-note"><strong>Q / 战场鼠标左键快速投篮球</strong>：取球后迅速出手，篮球命中或达到射程后自动快速回收，接回只需短暂准备即可再投。出手后可用 J 或 L 接上近战与防御，飞行期间保持单球。步行与骑乘均能使用。</p><p class="help-note"><strong>R 召唤王果冻，靠近并落地按 G 上骑</strong>；骑乘后按 G 下骑，再按 R 收回。空中不能上下骑。生命条在战场左下方显示实际生命，受伤会扣血；生命归零后可以保留成长与装备再战。</p><div class="dialog-actions"><button class="button primary" data-action="close-help">回到战场</button></div>';
 
   }
@@ -170,7 +185,7 @@
   function onEvent(event){
     if(!event)return;
     if(event.type==='stageStart'){displayGame();stageIntro(event.stageIndex||0);}
-    if(event.type==='stageClear')camp();
+    if(event.type==='stageClear'){if(game?.showcase)showcaseComplete();else camp();}
     if(event.type==='death'){updateState(game.getState());death();}
     if(event.type==='victory'){updateState(game.getState());victory();}
     if(event.type==='toast')toast(event.text||'');
@@ -185,6 +200,7 @@
     const button=event.target.closest('[data-action]');if(!button||button.disabled)return;
     event.preventDefault();const action=button.dataset.action;
     if(action==='summon'||action==='ride'||action==='throw'){pulseInput(action);return;}
+    if(action==='showcase'){panelStack=[];displayGame();game.startShowcase();}
     if(action==='new'){
       if(game.hasSave()&&panel!=='victory'){
         if(play.hidden)displayGame();

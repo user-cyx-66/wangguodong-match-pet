@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#182823">
-  <meta name="description" content="操控银发小鸡骑士，以四段剑技、远程篮球和横剑格挡闯过十二章旅途，召唤王果冻坐骑，打败恶龙并救出蔡乙先王子。">
+  <meta name="description" content="先在风雨荒原体验小鸡骑士与猎狼的精修试玩，练习三轻一重与格挡；也可继续原有十二章战役。">
   <title>银发小鸡骑士 · 召唤之约</title>
   <link rel="icon" type="image/svg+xml" href="assets/crest.svg">
   <link rel="stylesheet" href="styles.css?v=quality-20261113">
@@ -15,7 +15,8 @@
   <script src="wasteland-scenery.js?v=quality-20261113" defer></script>
   <script src="stage-rules.js?v=quality-20261113" defer></script>
   <script src="enemy-variety.js?v=quality-20261113" defer></script>
-  <script src="app.js?v=quality-20261113" defer></script>
+  <script src="showcase.js?v=showcase-20261113" defer></script>
+  <script src="app.js?v=showcase-20261113" defer></script>
 </head>
 <body data-screen="menu" data-hero="ikun">
   <div class="ambient" aria-hidden="true"></div>
@@ -37,14 +38,15 @@
       <div class="hero-copy">
         <div class="eyebrow"><span></span> 近身挥剑，远处投球。</div>
         <h1 id="hero-title">握紧剑。<br><em>唤来同行者。</em></h1>
-        <p class="hero-description">格挡反击、腾空斩击，掷出篮球打破包围。<br>穿过树冠、冰岭与熔流，唤来王果冻，把王子接回家。</p>
-        <div class="hero-tags"><span id="campaign-count">战役闯关</span><span>近战与招架</span><span>快速投球</span><span>特色关卡</span></div>
+        <p class="hero-description">先沿荒原灯火，迎战三只猎狼。<br>用三轻一重打出节奏，看准冲锋，格挡反击。</p>
+        <div class="hero-tags"><span>精修试玩</span><span>两处战区</span><span>三轻一重</span><span id="campaign-count">保留完整战役</span></div>
         <div id="menu-hero-picker"></div>
-        <div class="start-actions">
-          <button class="button primary large" id="continue-button" data-action="continue" hidden>继续旅程 <span aria-hidden="true">→</span></button>
-          <button class="button primary large" id="start-button" data-action="new">启程冒险 <span aria-hidden="true">→</span></button>
+        <div class="start-actions" style="flex-wrap:wrap">
+          <button class="button primary large" id="showcase-button" data-action="showcase">精修试玩 <span aria-hidden="true">→</span></button>
+          <button class="button" id="continue-button" data-action="continue" hidden>继续战役</button>
+          <button class="button subtle" id="start-button" data-action="new">开始十二章战役</button>
         </div>
-        <p class="save-note" id="save-note">进度自动保存在当前浏览器 · 支持键盘与触屏</p>
+        <p class="save-note" id="save-note">试玩不影响战役存档 · 支持键盘与触屏</p>
         <div class="companions"><div class="companion-mark">✦</div><p><strong>王果冻 · 召唤坐骑</strong><span>按 R 唤来，再靠近按 G 上骑。</span></p></div>
       </div>
       <div class="chapter-strip" id="chapter-strip" aria-label="完整战役路线"></div>
@@ -83,7 +85,7 @@
         <div id="game-overlay" class="game-overlay" hidden><div id="dialog-panel" class="dialog-panel" role="dialog" aria-modal="true" aria-label="游戏提示"></div></div>
         <div class="toast-stack" id="toasts" aria-live="polite"></div>
       </div>
-      <div class="control-bar"><div><kbd>A D</kbd><span>移动</span><kbd>空格</kbd><span>短跳 / 高跳 / 二段跳</span><kbd>J</kbd><span>连击 / 空中斩</span><kbd>空中 S J</kbd><span>下劈</span><kbd>Q / 左键</kbd><span>篮球</span><kbd>L / 右键</kbd><span>格挡</span><kbd>K</kbd><span>冲刺</span><kbd>E</kbd><span>剑气</span><kbd>R</kbd><span>召唤</span><kbd>G</kbd><span>上下骑</span><kbd>F</kbd><span>交互</span></div><span class="auto-save"><i></i> 自动存档</span></div>
+      <div class="control-bar"><div><kbd>A D</kbd><span>移动</span><kbd>空格</kbd><span>短跳 / 高跳 / 二段跳</span><kbd>J</kbd><span>连击 / 空中斩</span><kbd>空中 S J</kbd><span>下劈</span><kbd>Q / 左键</kbd><span>篮球</span><kbd>L / 右键</kbd><span>格挡</span><kbd>K</kbd><span>冲刺</span><kbd>E</kbd><span>剑气</span><kbd>R</kbd><span>召唤</span><kbd>G</kbd><span>上下骑</span><kbd>F</kbd><span>交互</span></div><span class="auto-save" id="save-status"><i></i> 自动存档</span></div>
       <div class="touch-controls" id="touch-controls" aria-label="触屏操作"><div class="touch-movement"><button data-input="left" aria-label="向左移动">◀</button><button data-input="right" aria-label="向右移动">▶</button></div><div class="touch-actions"><button data-input="summon" aria-label="召唤或收回王果冻">召唤</button><button data-input="ride" aria-label="靠近后上下骑" disabled>上骑</button><button data-input="guard" aria-label="按住横剑格挡">防御</button><button data-input="dash" aria-label="冲刺">冲刺</button><button data-input="throw" aria-label="投出篮球，等待回收后可再次使用" disabled>篮球</button><button data-input="combo" aria-label="释放剑气爆发">剑气</button><button class="touch-attack" data-input="attack" aria-label="三轻一重四段连击">挥剑</button><button data-input="jump" aria-label="跳跃和二段跳">跳跃</button><button data-input="interact" aria-label="关卡探索交互与王子救援">交互</button></div></div>
     </section>
   </main>
